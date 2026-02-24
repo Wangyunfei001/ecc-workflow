@@ -1,0 +1,29 @@
+{
+  "name": "ecc-workflow",
+  "displayName": "ECC Workflow",
+  "version": "1.0.0",
+  "description": "Spec-driven development workflow with continuous learning for Cursor.",
+  "author": {
+    "name": "ECC Workflow Contributors"
+  },
+  "license": "MIT",
+  "logo": "assets/logo.png",
+  "keywords": [
+    "spec-driven-development",
+    "continuous-learning",
+    "workflow",
+    "agents",
+    "cursor-plugin"
+  ],
+  "category": "developer-tools",
+  "tags": [
+    "spec-driven",
+    "continuous-learning",
+    "workflow"
+  ],
+  "skills": "./skills/",
+  "rules": "./rules/",
+  "agents": "./agents/",
+  "commands": "./commands/",
+  "hooks": "./hooks/"
+}

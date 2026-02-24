@@ -1,0 +1,148 @@
+{
+  "$schema": "https://cursor.sh/schemas/hooks.json",
+  "description": "ECC 工作流自动化 Hooks",
+  
+  "PreToolUse": [
+    {
+      "name": "代码写入提醒",
+      "description": "在写入代码文件前，提醒检查 Spec",
+      "matcher": "tool == 'Write' && tool_input.path matches '.*\\.(ts|tsx|js|jsx)$'",
+      "hooks": [
+        {
+          "type": "message",
+          "message": "📝 提醒：确保代码符合对应的 Spec 定义"
+        }
+      ]
+    },
+    {
+      "name": "长时间命令提醒",
+      "description": "运行长时间命令前建议使用 tmux",
+      "matcher": "tool == 'Bash' && tool_input.command matches '(npm|pnpm|yarn|cargo|pytest|jest).*'",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "if [ -z \"$TMUX\" ]; then echo '[Hook] 建议在 tmux 中运行以便会话持久化' >&2; fi"
+        }
+      ]
+    },
+    {
+      "name": "Git Push 确认",
+      "description": "Push 前打开编辑器确认",
+      "matcher": "tool == 'Bash' && tool_input.command matches 'git push.*'",
+      "hooks": [
+        {
+          "type": "message",
+          "message": "⚠️ 即将 Push 到远程仓库，请确认代码已审查通过"
+        }
+      ]
+    },
+    {
+      "name": "禁止直接 Push main/master",
+      "description": "阻止直接 push 到主分支",
+      "matcher": "tool == 'Bash' && tool_input.command matches 'git push.*(main|master).*'",
+      "hooks": [
+        {
+          "type": "message",
+          "message": "🚫 禁止直接 Push 到 main/master 分支，请创建 PR"
+        }
+      ]
+    }
+  ],
+  
+  "PostToolUse": [
+    {
+      "name": "TypeScript 类型检查",
+      "description": "编辑 .ts/.tsx 文件后自动运行类型检查",
+      "matcher": "tool == 'Write' && tool_input.path matches '.*\\.tsx?$'",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "npx tsc --noEmit --pretty 2>&1 | head -20 || true"
+        }
+      ]
+    },
+    {
+      "name": "Prettier 格式化",
+      "description": "编辑代码文件后自动格式化",
+      "matcher": "tool == 'Write' && tool_input.path matches '.*\\.(ts|tsx|js|jsx|css|json)$'",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "npx prettier --write \"${TOOL_INPUT_PATH}\" 2>/dev/null || true"
+        }
+      ]
+    },
+    {
+      "name": "检查 console.log",
+      "description": "编辑后检查是否有 console.log",
+      "matcher": "tool == 'Write' && tool_input.path matches '.*\\.(ts|tsx|js|jsx)$'",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "if grep -n 'console\\.log' \"${TOOL_INPUT_PATH}\" 2>/dev/null; then echo '⚠️ 发现 console.log，请移除或替换为 logger' >&2; fi || true"
+        }
+      ]
+    },
+    {
+      "name": "文档同步提醒",
+      "description": "代码变更后提醒同步文档",
+      "matcher": "tool == 'Write' && tool_input.path matches 'src/(api|types)/.*\\.ts$'",
+      "hooks": [
+        {
+          "type": "message",
+          "message": "📚 提醒：API/类型定义已变更，记得运行 /sync 同步文档"
+        }
+      ]
+    },
+    {
+      "name": "安全文件变更警告",
+      "description": "涉及认证/支付的文件变更时警告",
+      "matcher": "tool == 'Write' && tool_input.path matches '.*(auth|payment|admin|security).*'",
+      "hooks": [
+        {
+          "type": "message",
+          "message": "🔐 安全敏感文件已变更，建议运行 /review --security-only"
+        }
+      ]
+    }
+  ],
+  
+  "UserPromptSubmit": [
+    {
+      "name": "Bug 关键词检测",
+      "description": "检测到 Bug 相关关键词时建议使用 bug-hunter",
+      "matcher": "user_prompt matches '.*(报错|bug|错误|异常|TypeError|Error:).*'",
+      "hooks": [
+        {
+          "type": "message",
+          "message": "🐛 检测到可能是 Bug 排查，建议使用 @bug-hunter 进行系统性排查"
+        }
+      ]
+    }
+  ],
+  
+  "Stop": [
+    {
+      "name": "变更统计",
+      "description": "会话结束时统计变更文件",
+      "matcher": "*",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "echo '📊 本次会话变更文件:' && git diff --name-only 2>/dev/null | head -10 || true"
+        }
+      ]
+    },
+    {
+      "name": "提醒文档同步",
+      "description": "会话结束时提醒同步文档",
+      "matcher": "*",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "if git diff --name-only 2>/dev/null | grep -q 'src/'; then echo '📝 提醒：代码已变更，下次会话开始时运行 /sync 同步文档' >&2; fi || true"
+        }
+      ]
+    }
+  ]
+}

@@ -6,6 +6,8 @@
   "author": {
     "name": "ECC Workflow Contributors"
   },
+  "homepage": "https://github.com/Wangyunfei001/ecc-workflow",
+  "repository": "https://github.com/Wangyunfei001/ecc-workflow.git",
   "license": "MIT",
   "logo": "assets/logo.png",
   "keywords": [

@@ -37,3 +37,15 @@ echo "Y" | bash scripts/install.sh [--enable-hooks] <target-project-path>
 
 - `install.sh` and `verify-setup.sh` reference a `.cursor/` sub-directory layout from pre-marketplace versions. In the current marketplace layout, plugin content lives at root level (`agents/`, `skills/`, etc.), so the copy step in `install.sh` finds 0 files and `verify-setup.sh` reports failures for command/doc checks. This is an existing repo state, not an environment issue.
 - `verify-setup.sh` also checks for `~/.cursor/homunculus/config.json` which is not created by `install.sh`; this is another pre-existing gap.
+
+### Redesign specification status
+
+A spec-only redesign package is available and should be treated as the implementation baseline for future script changes:
+
+- `docs/architecture/plugin-contract.md`
+- `docs/specs/features/installer-redesign.md`
+- `docs/specs/features/hooks-layering.md`
+- `docs/specs/features/verify-redesign.md`
+- `docs/migration/legacy-to-marketplace.md`
+
+Important: these documents define target behavior but do not mean the current shell scripts are already updated.

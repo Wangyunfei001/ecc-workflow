@@ -1,142 +1,219 @@
 #!/bin/bash
 
-# ECC 工作流配置验证脚本
-# 用于检查 continuous-learning 系统是否正确配置
+# ECC Workflow 验证脚本 v4.0
+# 支持模式:
+#   --mode core      仅验证官方核心能力
+#   --mode learning  验证核心 + continuous-learning 增强层
 
-set -e
+set -euo pipefail
 
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  ECC 工作流 - Continuous Learning 配置验证"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
+MODE="core"
+STRICT=false
+JSON_OUTPUT=false
+TARGET_DIR="."
 
-# 配置
-HOMUNCULUS_DIR="$HOME/.cursor/homunculus"
-SETTINGS_FILE="$HOME/.cursor/settings.json"
-HOOKS_DIR="$HOME/.cursor/hooks"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORKFLOW_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+USER_CURSOR_DIR="$HOME/.cursor"
+HOMUNCULUS_DIR="$USER_CURSOR_DIR/homunculus"
 
-# 计数器
-PASSED=0
-FAILED=0
+ERRORS=0
+WARNS=0
+INFOS=0
 
-# 检查函数
-check() {
-    local desc="$1"
-    local cmd="$2"
-    
-    printf "%-50s" "  $desc"
-    
-    if eval "$cmd" >/dev/null 2>&1; then
-        echo "✅"
-        PASSED=$((PASSED + 1))
+err() {
+    ERRORS=$((ERRORS + 1))
+    echo "[ERROR] $1"
+}
+
+warn() {
+    WARNS=$((WARNS + 1))
+    echo "[WARN] $1"
+}
+
+info() {
+    INFOS=$((INFOS + 1))
+    echo "[INFO] $1"
+}
+
+check_file() {
+    local path="$1"
+    local level="$2"
+    local message="$3"
+    if [ -f "$path" ]; then
+        info "$message: OK ($path)"
     else
-        echo "❌"
-        FAILED=$((FAILED + 1))
+        if [ "$level" = "error" ]; then
+            err "$message: 缺失 ($path)"
+        else
+            warn "$message: 缺失 ($path)"
+        fi
     fi
 }
 
-# 1. 检查配置文件
-echo "📋 检查配置文件"
-echo "────────────────────────────────────────────────────"
-check "settings.json 存在" "test -f '$SETTINGS_FILE'"
-check "settings.json 包含 Hooks" "grep -q 'PreToolUse' '$SETTINGS_FILE'"
-check "config.json 存在" "test -f '$HOMUNCULUS_DIR/config.json'"
-check "observe.sh 存在" "test -f '$HOOKS_DIR/observe.sh'"
-check "observe.sh 可执行" "test -x '$HOOKS_DIR/observe.sh'"
-echo ""
+check_dir() {
+    local path="$1"
+    local level="$2"
+    local message="$3"
+    if [ -d "$path" ]; then
+        info "$message: OK ($path)"
+    else
+        if [ "$level" = "error" ]; then
+            err "$message: 缺失 ($path)"
+        else
+            warn "$message: 缺失 ($path)"
+        fi
+    fi
+}
 
-# 2. 检查目录结构
-echo "📂 检查目录结构"
-echo "────────────────────────────────────────────────────"
-check "homunculus/ 目录" "test -d '$HOMUNCULUS_DIR'"
-check "observations.jsonl 文件" "test -f '$HOMUNCULUS_DIR/observations.jsonl'"
-check "observations.archive/ 目录" "test -d '$HOMUNCULUS_DIR/observations.archive'"
-check "instincts/personal/ 目录" "test -d '$HOMUNCULUS_DIR/instincts/personal'"
-check "instincts/inherited/ 目录" "test -d '$HOMUNCULUS_DIR/instincts/inherited'"
-check "evolved/skills/ 目录" "test -d '$HOMUNCULUS_DIR/evolved/skills'"
-check "evolved/commands/ 目录" "test -d '$HOMUNCULUS_DIR/evolved/commands'"
-check "evolved/agents/ 目录" "test -d '$HOMUNCULUS_DIR/evolved/agents'"
-check "exports/ 目录" "test -d '$HOMUNCULUS_DIR/exports' || mkdir -p '$HOMUNCULUS_DIR/exports'"
-echo ""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --mode)
+            MODE="$2"
+            shift 2
+            ;;
+        --strict)
+            STRICT=true
+            shift
+            ;;
+        --json)
+            JSON_OUTPUT=true
+            shift
+            ;;
+        --target)
+            TARGET_DIR="$2"
+            shift 2
+            ;;
+        -h|--help)
+            echo "用法: $0 [--mode core|learning] [--strict] [--json] [--target <path>]"
+            exit 0
+            ;;
+        *)
+            TARGET_DIR="$1"
+            shift
+            ;;
+    esac
+done
 
-# 3. 检查命令文件
-echo "⚙️  检查命令实现"
-echo "────────────────────────────────────────────────────"
-WORKFLOW_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-check "instinct-status 命令" "test -f '$WORKFLOW_DIR/.cursor/commands/instinct-status.md'"
-check "instinct-export 命令" "test -f '$WORKFLOW_DIR/.cursor/commands/instinct-export.md'"
-check "instinct-import 命令" "test -f '$WORKFLOW_DIR/.cursor/commands/instinct-import.md'"
-check "evolve 命令" "test -f '$WORKFLOW_DIR/.cursor/commands/evolve.md'"
-check "instinct-export 详细文档" "test -f '$WORKFLOW_DIR/.cursor/skills/continuous-learning/commands/instinct-export.md'"
-check "instinct-import 详细文档" "test -f '$WORKFLOW_DIR/.cursor/skills/continuous-learning/commands/instinct-import.md'"
-echo ""
-
-# 4. 检查文档
-echo "📖 检查文档"
-echo "────────────────────────────────────────────────────"
-check "使用指南" "test -f '$WORKFLOW_DIR/docs/continuous-learning-setup.md'"
-check "SKILL 文档" "test -f '$WORKFLOW_DIR/.cursor/skills/continuous-learning/SKILL.md'"
-check "Observer Agent" "test -f '$WORKFLOW_DIR/.cursor/skills/continuous-learning/agents/observer.md'"
-check "记忆架构文档" "test -f '$WORKFLOW_DIR/docs/memory-architecture.md'"
-check "变更日志" "test -f '$WORKFLOW_DIR/CHANGELOG.md'"
-check "配置完成文档" "test -f '$WORKFLOW_DIR/CONFIG_COMPLETE.md'"
-echo ""
-
-# 5. 系统状态
-echo "📊 系统状态"
-echo "────────────────────────────────────────────────────"
-
-# 观察文件大小
-if [ -f "$HOMUNCULUS_DIR/observations.jsonl" ]; then
-    OBS_SIZE=$(stat -f%z "$HOMUNCULUS_DIR/observations.jsonl" 2>/dev/null || stat -c%s "$HOMUNCULUS_DIR/observations.jsonl" 2>/dev/null || echo 0)
-    OBS_LINES=$(wc -l < "$HOMUNCULUS_DIR/observations.jsonl" 2>/dev/null || echo 0)
-    printf "  %-50s%s\n" "观察文件大小" "${OBS_SIZE} bytes"
-    printf "  %-50s%s\n" "观察记录数" "$OBS_LINES 条"
-else
-    printf "  %-50s%s\n" "观察文件" "不存在 ❌"
+if [ "$MODE" != "core" ] && [ "$MODE" != "learning" ]; then
+    echo "无效 mode: $MODE (仅支持 core|learning)"
+    exit 1
 fi
 
-# Instinct 数量
-PERSONAL_COUNT=$(ls "$HOMUNCULUS_DIR/instincts/personal/" 2>/dev/null | wc -l | tr -d ' ')
-INHERITED_COUNT=$(ls "$HOMUNCULUS_DIR/instincts/inherited/" 2>/dev/null | wc -l | tr -d ' ')
-printf "  %-50s%s\n" "个人 Instinct" "$PERSONAL_COUNT 个"
-printf "  %-50s%s\n" "导入 Instinct" "$INHERITED_COUNT 个"
+if [ ! -d "$TARGET_DIR" ]; then
+    echo "目标目录不存在: $TARGET_DIR"
+    exit 1
+fi
 
-# 演化资源数量
-SKILLS_COUNT=$(ls "$HOMUNCULUS_DIR/evolved/skills/" 2>/dev/null | wc -l | tr -d ' ')
-COMMANDS_COUNT=$(ls "$HOMUNCULUS_DIR/evolved/commands/" 2>/dev/null | wc -l | tr -d ' ')
-AGENTS_COUNT=$(ls "$HOMUNCULUS_DIR/evolved/agents/" 2>/dev/null | wc -l | tr -d ' ')
-printf "  %-50s%s\n" "演化的 Skills" "$SKILLS_COUNT 个"
-printf "  %-50s%s\n" "演化的 Commands" "$COMMANDS_COUNT 个"
-printf "  %-50s%s\n" "演化的 Agents" "$AGENTS_COUNT 个"
+cd "$TARGET_DIR"
+TARGET_DIR="$(pwd)"
+PROJECT_CURSOR_DIR="$TARGET_DIR/.cursor"
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  ECC Workflow 配置验证 (mode=$MODE)"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 echo ""
+echo "[Group] Contract"
+check_file "$WORKFLOW_DIR/.cursor-plugin/plugin.json" "error" "plugin manifest"
+check_dir "$WORKFLOW_DIR/agents" "error" "repo agents"
+check_dir "$WORKFLOW_DIR/skills" "error" "repo skills"
+check_dir "$WORKFLOW_DIR/commands" "error" "repo commands"
+check_dir "$WORKFLOW_DIR/rules" "error" "repo rules"
+check_dir "$WORKFLOW_DIR/hooks" "error" "repo hooks"
 
-# 总结
+echo ""
+echo "[Group] Install"
+check_dir "$PROJECT_CURSOR_DIR/agents" "error" "project agents"
+check_dir "$PROJECT_CURSOR_DIR/skills" "error" "project skills"
+check_dir "$PROJECT_CURSOR_DIR/commands" "error" "project commands"
+check_dir "$PROJECT_CURSOR_DIR/rules" "error" "project rules"
+check_file "$PROJECT_CURSOR_DIR/hooks.json" "error" "project hooks.json"
+
+echo ""
+echo "[Group] Hooks"
+check_file "$PROJECT_CURSOR_DIR/hooks/hooks.core.json" "error" "layer file hooks.core.json"
+check_file "$PROJECT_CURSOR_DIR/hooks/hooks.compat.json" "warn" "layer file hooks.compat.json"
+if [ "$MODE" = "learning" ]; then
+    check_file "$PROJECT_CURSOR_DIR/hooks/hooks.learning.json" "warn" "layer file hooks.learning.json"
+fi
+
+if [ -f "$PROJECT_CURSOR_DIR/hooks.json" ]; then
+    if command -v jq >/dev/null 2>&1; then
+        if jq -e '.version | numbers' "$PROJECT_CURSOR_DIR/hooks.json" >/dev/null 2>&1; then
+            info "hooks version 字段合法"
+        else
+            err "hooks version 字段不合法（应为数字）"
+        fi
+
+        if jq -e '.hooks | type=="object"' "$PROJECT_CURSOR_DIR/hooks.json" >/dev/null 2>&1; then
+            info "hooks 顶层对象合法"
+        else
+            err "hooks 顶层对象缺失或类型错误"
+        fi
+
+        if jq -e '.hooks.preToolUse' "$PROJECT_CURSOR_DIR/hooks.json" >/dev/null 2>&1; then
+            info "preToolUse 已配置"
+        else
+            warn "preToolUse 未配置"
+        fi
+
+        if [ "$MODE" = "learning" ]; then
+            if jq -e '.hooks.preToolUse[]?.command | strings | contains("observe.sh")' "$PROJECT_CURSOR_DIR/hooks.json" >/dev/null 2>&1; then
+                info "learning hook 已合并到 preToolUse"
+            else
+                warn "learning hook 可能未合并到 preToolUse"
+            fi
+        fi
+    else
+        warn "未检测到 jq，跳过 hooks 结构化校验"
+    fi
+fi
+
+echo ""
+if [ "$MODE" = "learning" ]; then
+    echo "[Group] Learning"
+    check_dir "$HOMUNCULUS_DIR" "warn" "homunculus 根目录"
+    check_dir "$HOMUNCULUS_DIR/instincts/personal" "warn" "instincts/personal"
+    check_dir "$HOMUNCULUS_DIR/instincts/inherited" "warn" "instincts/inherited"
+    check_file "$HOMUNCULUS_DIR/observations.jsonl" "warn" "observations.jsonl"
+    check_file "$USER_CURSOR_DIR/hooks/observe.sh" "warn" "observe.sh"
+    if [ -f "$USER_CURSOR_DIR/hooks/observe.sh" ]; then
+        if [ -x "$USER_CURSOR_DIR/hooks/observe.sh" ]; then
+            info "observe.sh 可执行"
+        else
+            warn "observe.sh 不可执行"
+        fi
+
+        # 能力探针: 验证 observe.sh 是否包含 stdin 优先 + input_raw 记录能力
+        if grep -Eq "STDIN_PAYLOAD|input_raw" "$USER_CURSOR_DIR/hooks/observe.sh" >/dev/null 2>&1; then
+            info "observe.sh 能力探针通过（stdin/input_raw）"
+        else
+            warn "observe.sh 可能为旧版本（缺少 stdin/input_raw 能力）"
+        fi
+    fi
+else
+    info "core 模式下跳过 learning 组检查"
+fi
+
+echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  验证结果"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-printf "  ✅ 通过: %d\n" "$PASSED"
-printf "  ❌ 失败: %d\n" "$FAILED"
-echo ""
+echo "ERROR: $ERRORS"
+echo "WARN:  $WARNS"
+echo "INFO:  $INFOS"
 
-if [ "$FAILED" -eq 0 ]; then
-    echo "  🎉 配置完美！系统已就绪。"
-    echo ""
-    echo "  下一步："
-    echo "  1. 重启 Cursor（让 Hooks 生效）"
-    echo "  2. 正常开发，系统会自动收集数据"
-    echo "  3. 运行 /instinct-status 查看学习成果"
-    echo ""
-    echo "  详细使用说明："
-    echo "  cat docs/continuous-learning-setup.md"
-else
-    echo "  ⚠️  有 $FAILED 项检查失败，请检查配置。"
-    echo ""
-    echo "  解决方案："
-    echo "  1. 确保运行过 scripts/install.sh"
-    echo "  2. 检查 ~/.cursor/settings.json 是否正确"
-    echo "  3. 查看详细文档: docs/continuous-learning-setup.md"
+if [ "$JSON_OUTPUT" = true ]; then
+    echo "{\"mode\":\"$MODE\",\"errors\":$ERRORS,\"warnings\":$WARNS,\"infos\":$INFOS}"
 fi
 
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+if [ "$ERRORS" -gt 0 ]; then
+    exit 1
+fi
+
+if [ "$STRICT" = true ] && [ "$WARNS" -gt 0 ]; then
+    exit 1
+fi
+
+exit 0

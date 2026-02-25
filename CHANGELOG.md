@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.1.0 - 2026-02-25
+
+- Add redesign documents:
+  - `docs/architecture/plugin-contract.md`
+  - `docs/specs/features/installer-redesign.md`
+  - `docs/specs/features/hooks-layering.md`
+  - `docs/specs/features/verify-redesign.md`
+  - `docs/migration/legacy-to-marketplace.md`
+- Rewrite `scripts/install.sh` to v4.0 with:
+  - root-level component mapping (`agents/`, `skills/`, `commands/`, `rules/`, `hooks/`, `templates/`)
+  - mode-aware install (`core` by default, `--enable-learning` optional)
+  - `--dry-run`, `--verify-after`, and verify forwarding
+  - layered hooks composition for `.cursor/hooks.json`
+- Rewrite `scripts/verify-setup.sh` to v4.0 with:
+  - `--mode core|learning`
+  - grouped checks (Contract / Install / Hooks / Learning)
+  - ERROR/WARN/INFO level output and strict mode support
+  - observe capability probe (`stdin` + `input_raw`)
+- Introduce layered hooks files:
+  - `hooks/hooks.core.json`
+  - `hooks/hooks.compat.json`
+  - `hooks/hooks.learning.json`
+- Upgrade `skills/continuous-learning/hooks/observe.sh`:
+  - stdin JSON first, environment fallback second
+  - safe JSON recording via `jq`
+  - `input_raw` fallback field when raw input is non-JSON
+- Update docs in `README.md`, `AGENTS.md`, and `hooks/README.md` to reflect new behavior.
+
 ## 1.0.2 - 2026-02-24
 
 - Migrate `hooks/hooks.json` to the new Cursor Hooks schema (`version` + `hooks`).

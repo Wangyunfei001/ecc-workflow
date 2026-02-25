@@ -11,7 +11,7 @@ ecc-workflow
 https://github.com/Wangyunfei001/ecc-workflow
 
 **版本**  
-v1.0.1
+v1.0.2
 
 **插件简介**  
 ecc-workflow 是一个面向 Cursor 的 Spec-driven（规格驱动）开发插件，覆盖从需求分析到代码实现的 5 阶段流程，并内置持续学习机制，帮助团队把“对话式编码”升级为“可复用、可审查、可迭代”的工程流程。
@@ -48,7 +48,7 @@ ecc-workflow
 https://github.com/Wangyunfei001/ecc-workflow
 
 **Version**  
-v1.0.1
+v1.0.2
 
 **Description**  
 ecc-workflow is a Cursor plugin for Spec-driven development with a continuous learning loop. It provides a structured 5-phase workflow from requirement analysis to implementation, helping teams move from ad-hoc chat coding to a repeatable, reviewable engineering process.

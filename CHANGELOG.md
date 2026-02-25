@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.2 - 2026-02-24
+
+- Migrate `hooks/hooks.json` to the new Cursor Hooks schema (`version` + `hooks`).
+- Update hook event names to `preToolUse`, `postToolUse`, `beforeSubmitPrompt`, and `stop`.
+- Rewrite `hooks/README.md` to match the latest Cursor hooks docs and troubleshooting flow.
+- Update plugin metadata version to `1.0.2`.
+
 ## 1.0.1 - 2026-02-24
 
 - Improve README with marketplace-friendly install and quick-start sections.

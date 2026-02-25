@@ -98,6 +98,31 @@ Implemented highlights:
 - `hooks/` is split into `core`, `compat`, and `learning` layers.
 - `observe.sh` now supports stdin-first parsing with environment-variable fallback.
 
+## TaskGraph protocol
+
+Task decomposition now follows a unified protocol:
+
+- Protocol spec: `docs/architecture/task-graph-protocol.md`
+- Commands with protocol section:
+  - `commands/orchestrate.md`
+  - `commands/learn-project.md`
+  - `commands/analyze.md`
+  - `commands/implement.md`
+  - `commands/review.md`
+- Routing alignment: `rules/agent-routing.md`
+
+To trigger parallel subagent cards in Cursor UI, ensure the command/prompt instructs the agent to launch multiple subagents in the same turn with concise `description` fields.
+
+## Validation checklist
+
+```bash
+bash -n scripts/install.sh scripts/verify-setup.sh
+jq empty .cursor-plugin/plugin.json hooks/hooks.json hooks/hooks.core.json hooks/hooks.compat.json hooks/hooks.learning.json
+for d in skills/*/; do test -f "$d/SKILL.md" && echo "OK $d" || echo "MISSING $d"; done
+bash scripts/verify-setup.sh --mode core --target <target-project>
+bash scripts/verify-setup.sh --mode learning --target <target-project>
+```
+
 ## License
 
 MIT

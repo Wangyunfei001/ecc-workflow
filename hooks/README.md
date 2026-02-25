@@ -136,6 +136,8 @@ echo "Y" | bash scripts/install.sh --enable-learning --verify-after
 2. 非关键命令加 `|| true`，降低失败影响
 3. 输出到 `stderr`（`>&2`）便于在面板中观察
 4. 阻止危险操作时使用 `exit 2`
+5. TaskGraph 协议相关事件（任务拆解/并行编排）优先通过 learning 层观察，不放入 core 阻断路径
+6. 并行 subagent 的可观测性依赖 `preToolUse/postToolUse` + `observe.sh`，建议定期运行 verify learning 模式
 
 ## 相关资源
 

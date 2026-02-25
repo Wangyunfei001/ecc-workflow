@@ -201,13 +201,36 @@ parallel_review:
   merge_strategy: "all_must_pass"
 ```
 
+## TaskGraph 调度规则
+
+所有多 Agent 流程默认遵循 `docs/architecture/task-graph-protocol.md`。
+
+```yaml
+taskgraph_scheduler:
+  runnable_condition: "all_depends_on_succeeded"
+  parallel_condition: "parallelizable_true_and_no_policy_conflict"
+  default_merge_strategy: "all_must_pass"
+  checkpoint:
+    enabled: true
+    requires_explicit_approval: true
+```
+
+### 路由到调度映射
+
+- `/orchestrate`：完整 TaskGraph 调度入口
+- `/learn-project`：阶段化调度，Phase 3/4 子任务可并行
+- `/analyze`：澄清问题分解调度
+- `/implement`：Spec gate + 实现 + 测试 + 报告调度
+- `/review`：安全/质量/性能/风格并行审查后合并
+
 ## 优先级冲突
 
 当多个 Agent 同时匹配时：
 
-1. **安全 > 功能** — 涉及安全的任务优先触发 `security-reviewer`
-2. **具体 > 通用** — 明确的 `/command` 优先于关键词匹配
+1. **安全 > 其他** — 涉及安全的任务优先触发 `security-reviewer`
+2. **依赖 > 并行偏好** — 未满足依赖的任务必须等待
 3. **主动 > 被动** — 用户明确指定的 Agent 优先
+4. **具体 > 通用** — 明确 `/command` 优先于关键词匹配
 
 ### 示例
 

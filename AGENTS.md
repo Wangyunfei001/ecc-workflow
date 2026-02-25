@@ -23,7 +23,7 @@ This is **ecc-workflow**, a Cursor IDE plugin consisting entirely of Markdown, J
 
 There is no traditional linter. Validate correctness with:
 - `bash -n scripts/install.sh scripts/verify-setup.sh` — shell syntax check
-- `jq empty .cursor-plugin/plugin.json hooks/hooks.json` — JSON validation
+- `jq empty .cursor-plugin/plugin.json hooks/hooks.json hooks/hooks.core.json hooks/hooks.compat.json hooks/hooks.learning.json` — JSON validation
 - Verify all 13 skills have `SKILL.md`: `for d in skills/*/; do test -f "$d/SKILL.md" && echo "OK $d" || echo "MISSING $d"; done`
 
 ### Running the install script
@@ -33,10 +33,16 @@ There is no traditional linter. Validate correctness with:
 echo "Y" | bash scripts/install.sh [--enable-hooks] <target-project-path>
 ```
 
-### Known caveats
+### TaskGraph protocol status
 
-- `install.sh` and `verify-setup.sh` reference a `.cursor/` sub-directory layout from pre-marketplace versions. In the current marketplace layout, plugin content lives at root level (`agents/`, `skills/`, etc.), so the copy step in `install.sh` finds 0 files and `verify-setup.sh` reports failures for command/doc checks. This is an existing repo state, not an environment issue.
-- `verify-setup.sh` also checks for `~/.cursor/homunculus/config.json` which is not created by `install.sh`; this is another pre-existing gap.
+Task decomposition and orchestration now use a unified TaskGraph protocol:
+
+- Spec: `docs/architecture/task-graph-protocol.md`
+- Command-level protocol sections: `orchestrate`, `learn-project`, `analyze`, `implement`, `review`
+- Routing alignment: `rules/agent-routing.md`
+- Capability probe: `scripts/verify-setup.sh --mode learning`
+
+This repo still relies on prompt/rule-driven orchestration. It does not include a standalone runtime DAG scheduler service.
 
 ### Redesign specification status
 

@@ -56,6 +56,63 @@ description: 需求分析入口。工作流的第一步，确保在开发前充�
 └─────────────────────────────────────────────────────────────┘
 ```
 
+## TaskGraph 协议（推荐）
+
+`/analyze` 的核心是“先收敛目标，再并行澄清关键问题，再统一确认”。
+
+```yaml
+workflow_id: wf-analyze-requirement
+goal: "形成可实现、可验收的需求文档"
+tasks:
+  - id: T1
+    name: initial_understanding
+    owner: requirement-analyst
+    depends_on: []
+    parallelizable: false
+  - id: T2A
+    name: clarify_users_and_scenarios
+    owner: requirement-analyst
+    depends_on: [T1]
+    parallelizable: true
+  - id: T2B
+    name: clarify_scope
+    owner: requirement-analyst
+    depends_on: [T1]
+    parallelizable: true
+  - id: T2C
+    name: clarify_acceptance
+    owner: requirement-analyst
+    depends_on: [T1]
+    parallelizable: true
+  - id: T2D
+    name: clarify_constraints
+    owner: requirement-analyst
+    depends_on: [T1]
+    parallelizable: true
+  - id: T2E
+    name: clarify_priority_and_risk
+    owner: requirement-analyst
+    depends_on: [T1]
+    parallelizable: true
+  - id: T3
+    name: iterative_confirmation
+    owner: requirement-analyst
+    depends_on: [T2A, T2B, T2C, T2D, T2E]
+    parallelizable: false
+  - id: T4
+    name: write_requirement_doc
+    owner: requirement-analyst
+    depends_on: [T3]
+    parallelizable: false
+checkpoints:
+  - id: C1
+    after_tasks: [T4]
+    type: human_review
+merge:
+  after: [T2A, T2B, T2C, T2D, T2E]
+  strategy: all_must_pass
+```
+
 ## 追问清单
 
 命令执行时会检查以下信息是否完整：

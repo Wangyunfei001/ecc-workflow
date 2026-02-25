@@ -66,6 +66,22 @@ check_dir() {
     fi
 }
 
+check_pattern() {
+    local path="$1"
+    local pattern="$2"
+    local level="$3"
+    local message="$4"
+    if [ -f "$path" ] && grep -Eq "$pattern" "$path" >/dev/null 2>&1; then
+        info "$message: OK ($path)"
+    else
+        if [ "$level" = "error" ]; then
+            err "$message: 缺失或不匹配 ($path)"
+        else
+            warn "$message: 缺失或不匹配 ($path)"
+        fi
+    fi
+}
+
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --mode)
@@ -116,6 +132,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 echo "[Group] Contract"
 check_file "$WORKFLOW_DIR/.cursor-plugin/plugin.json" "error" "plugin manifest"
+check_file "$WORKFLOW_DIR/docs/architecture/task-graph-protocol.md" "error" "task-graph protocol"
 check_dir "$WORKFLOW_DIR/agents" "error" "repo agents"
 check_dir "$WORKFLOW_DIR/skills" "error" "repo skills"
 check_dir "$WORKFLOW_DIR/commands" "error" "repo commands"
@@ -186,12 +203,24 @@ if [ "$MODE" = "learning" ]; then
         fi
 
         # 能力探针: 验证 observe.sh 是否包含 stdin 优先 + input_raw 记录能力
-        if grep -Eq "STDIN_PAYLOAD|input_raw" "$USER_CURSOR_DIR/hooks/observe.sh" >/dev/null 2>&1; then
-            info "observe.sh 能力探针通过（stdin/input_raw）"
+        if grep -Eq "STDIN_PAYLOAD|input_raw|tool_name|tool_input|tool_output" "$USER_CURSOR_DIR/hooks/observe.sh" >/dev/null 2>&1; then
+            info "observe.sh 能力探针通过（stdin/input_raw/tool fields）"
         else
-            warn "observe.sh 可能为旧版本（缺少 stdin/input_raw 能力）"
+            warn "observe.sh 可能为旧版本（缺少 stdin/input_raw/tool 字段解析）"
+        fi
+
+        if grep -Eq "TodoWrite|todos" "$USER_CURSOR_DIR/hooks/observe.sh" >/dev/null 2>&1; then
+            info "observe.sh 包含 TodoWrite/todos 显式处理能力"
+        else
+            warn "observe.sh 未显式声明 TodoWrite/todos 处理（通用 tool 记录仍可工作）"
         fi
     fi
+
+    check_pattern "$WORKFLOW_DIR/commands/orchestrate.md" "TaskGraph 协议" "warn" "orchestrate 协议段"
+    check_pattern "$WORKFLOW_DIR/commands/learn-project.md" "TaskGraph 协议" "warn" "learn-project 协议段"
+    check_pattern "$WORKFLOW_DIR/commands/analyze.md" "TaskGraph 协议" "warn" "analyze 协议段"
+    check_pattern "$WORKFLOW_DIR/commands/implement.md" "TaskGraph 协议" "warn" "implement 协议段"
+    check_pattern "$WORKFLOW_DIR/commands/review.md" "TaskGraph 协议" "warn" "review 协议段"
 else
     info "core 模式下跳过 learning 组检查"
 fi

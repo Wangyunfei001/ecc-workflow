@@ -2,6 +2,11 @@
 
 ## 1.1.0 - 2026-02-25
 
+- Add TaskGraph protocol for multi-agent orchestration:
+  - `docs/architecture/task-graph-protocol.md`
+  - TaskGraph sections in `orchestrate`, `learn-project`, `analyze`, `implement`, `review` commands
+  - TaskGraph scheduling rules in `rules/agent-routing.md`
+  - Verify-setup probes for protocol docs and observe.sh capabilities
 - Add redesign documents:
   - `docs/architecture/plugin-contract.md`
   - `docs/specs/features/installer-redesign.md`

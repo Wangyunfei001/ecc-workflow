@@ -43,6 +43,15 @@ Hooks 是 Cursor 的自动化触发器，在特定事件发生时执行脚本。
 | `UserPromptSubmit` | `beforeSubmitPrompt` |
 | `Stop` | `stop` |
 
+## ecc-workflow 当前 hooks 分层
+
+- `hooks.core.json`：核心质量与安全规则（默认必选）
+- `hooks.compat.json`：历史行为兼容层（默认合并）
+- `hooks.learning.json`：continuous-learning 增强层（仅 `--enable-learning` 时合并）
+- `hooks.json`：核心基线配置（可直接使用）
+
+安装脚本会在安装时合成项目级 `.cursor/hooks.json`。
+
 ## ecc-workflow 当前 hooks 覆盖
 
 | 事件 | 行为 |
@@ -54,11 +63,18 @@ Hooks 是 Cursor 的自动化触发器，在特定事件发生时执行脚本。
 
 ## 安装方式
 
-将插件内配置复制到项目根（本地测试最常用）：
+最小手工安装（核心基线）：
 
 ```bash
 mkdir -p .cursor
 cp hooks/hooks.json .cursor/hooks.json
+```
+
+分层模式推荐通过安装脚本：
+
+```bash
+echo "Y" | bash scripts/install.sh --verify-after
+echo "Y" | bash scripts/install.sh --enable-learning --verify-after
 ```
 
 ## 常用环境变量（在 command 中可用）
@@ -68,6 +84,22 @@ cp hooks/hooks.json .cursor/hooks.json
 | `${TOOL_INPUT_PATH}` | 文件路径（`Write` 相关） |
 | `${TOOL_INPUT_COMMAND}` | Shell 命令内容（`Shell` 相关） |
 | `${USER_PROMPT}` | 用户输入（`beforeSubmitPrompt`） |
+
+## observe.sh 输入兼容策略
+
+`skills/continuous-learning/hooks/observe.sh` 采用以下优先级读取上下文：
+
+1. **stdin JSON**（优先，面向新版 hooks 事件输入）
+2. **环境变量**（兜底，兼容旧配置）
+
+说明：
+
+- 如果存在可解析的 stdin JSON，会优先读取 `tool_name/tool_input/tool_output/user_prompt/session_id`（含常见别名）。
+- 若 stdin 不可用或不可解析，则回退到 `TOOL_NAME`、`TOOL_INPUT`、`TOOL_OUTPUT`、`USER_PROMPT`、`SESSION_ID`。
+- 脚本在 TTY 下不会主动读取 stdin，避免手工执行时阻塞。
+- 记录结构中：
+  - `input` 始终是合法 JSON（非法输入时降级为 `{}`）
+  - `input_raw` 在输入非法时保留原始字符串，否则为 `null`
 
 ## TypeScript Stop Hook 示例
 

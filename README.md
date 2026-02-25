@@ -75,6 +75,29 @@ For complex features, run `@architect` between `@planner` and `/spec`.
 - `hooks/hooks.json` is optional and intended for project-level automation.
 - Existing `templates/` are preserved for skill/command references.
 
+## Redesign status
+
+The plugin redesign docs are available and the first implementation wave is now applied in this repository.
+
+- Contract: `docs/architecture/plugin-contract.md`
+- Installer redesign: `docs/specs/features/installer-redesign.md`
+- Hooks layering: `docs/specs/features/hooks-layering.md`
+- Verify redesign: `docs/specs/features/verify-redesign.md`
+- Migration guide: `docs/migration/legacy-to-marketplace.md`
+
+Current direction:
+
+- Core mode first (official Cursor plugin/hook flow)
+- Optional learning mode (`homunculus`) as an enhancement layer
+- Backward compatibility through an explicit `compat` layer
+
+Implemented highlights:
+
+- `scripts/install.sh` now supports core/learning mode installation and layered hooks composition.
+- `scripts/verify-setup.sh` now supports mode-based verification with grouped checks.
+- `hooks/` is split into `core`, `compat`, and `learning` layers.
+- `observe.sh` now supports stdin-first parsing with environment-variable fallback.
+
 ## License
 
 MIT

@@ -1,4 +1,4 @@
-# Legacy to Marketplace Migration Guide
+# 从旧版到 Marketplace 迁移指南
 
 ## 1. 目标
 

@@ -1,60 +1,60 @@
 # ecc-workflow
 
-Spec-driven development workflow + continuous learning for Cursor.
+面向 Cursor 的规范驱动开发工作流 + 持续学习。
 
-## Marketplace install
+## 从 Marketplace 安装
 
-Install from Cursor Marketplace:
+从 Cursor Marketplace 安装：
 
-1. Open Cursor Marketplace
-2. Search `ecc-workflow`
-3. Click **Install**
+1. 打开 Cursor Marketplace
+2. 搜索 `ecc-workflow`
+3. 点击 **Install**
 
-Or install directly in chat:
+或在对话中直接安装：
 
 ```bash
 /add-plugin ecc-workflow
 ```
 
-## Quick start (5 minutes)
+## 快速开始（5 分钟）
 
-Use this minimal flow in a new or existing project:
+在新项目或现有项目中使用以下最小流程：
 
 ```bash
-# 1) Clarify requirements (Phase 1)
+# 1) 澄清需求（Phase 1）
 /analyze Build user login with email and phone support
 
-# 2) Plan implementation tasks (Phase 2)
+# 2) 规划实施任务（Phase 2）
 @planner @docs/requirements/<your-requirement-file>.md
 
-# 3) Write implementation-ready spec (Phase 4)
+# 3) 编写可实施的 Spec（Phase 4）
 /spec @docs/plans/<your-plan-file>.md
 
-# 4) Implement and validate (Phase 5)
+# 4) 实现与验证（Phase 5）
 /implement @docs/specs/features/<your-spec-file>.md
 /review
 /sync
 ```
 
-For complex features, run `@architect` between `@planner` and `/spec`.
+对于复杂功能，在 `@planner` 和 `/spec` 之间运行 `@architect`。
 
-## What this plugin provides
+## 本插件提供的内容
 
-- `rules/`: quality gates, routing, coding and security guardrails
-- `skills/`: 5-phase Spec-driven workflow and learning loop
-- `agents/`: requirement/planning/architecture/spec/coding/review/doc-sync roles
-- `commands/`: `/analyze`, `/spec`, `/implement`, `/review`, `/sync`, and learning commands
-- `hooks/`: optional project hooks for reminders, checks, and safety prompts
+- `rules/`: 质量门禁、路由、编码与安全护栏
+- `skills/`: 5 阶段规范驱动工作流与学习循环
+- `agents/`: 需求/规划/架构/Spec/编码/审查/文档同步等角色
+- `commands/`: `/analyze`、`/spec`、`/implement`、`/review`、`/sync` 及学习相关命令
+- `hooks/`: 可选的项目钩子，用于提醒、检查与安全提示
 
-## Typical flow
+## 典型流程
 
-1. Run `/analyze` to clarify requirements.
-2. Use `@planner` and optionally `@architect` for plan/design.
-3. Run `/spec` to produce implementation-grade spec.
-4. Run `/implement`, then `/review` and `/sync`.
-5. Use `/learn-project` and `/evolve` to improve long-term quality.
+1. 运行 `/analyze` 澄清需求。
+2. 使用 `@planner`，可选 `@architect` 进行规划/设计。
+3. 运行 `/spec` 生成可实施级 Spec。
+4. 运行 `/implement`，然后 `/review` 和 `/sync`。
+5. 使用 `/learn-project` 和 `/evolve` 提升长期质量。
 
-## Directory layout
+## 目录结构
 
 ```text
 .
@@ -70,50 +70,50 @@ For complex features, run `@architect` between `@planner` and `/spec`.
 └── LICENSE
 ```
 
-## Notes
+## 说明
 
-- `hooks/hooks.json` is optional and intended for project-level automation.
-- Existing `templates/` are preserved for skill/command references.
+- `hooks/hooks.json` 为可选，用于项目级自动化。
+- 现有 `templates/` 保留供 skill/command 引用。
 
-## Redesign status
+## 重构状态
 
-The plugin redesign docs are available and the first implementation wave is now applied in this repository.
+插件重构文档已就绪，首轮实现已在本仓库中落地。
 
-- Contract: `docs/architecture/plugin-contract.md`
-- Installer redesign: `docs/specs/features/installer-redesign.md`
-- Hooks layering: `docs/specs/features/hooks-layering.md`
-- Verify redesign: `docs/specs/features/verify-redesign.md`
-- Migration guide: `docs/migration/legacy-to-marketplace.md`
+- 契约: `docs/architecture/plugin-contract.md`
+- 安装器重构: `docs/specs/features/installer-redesign.md`
+- Hooks 分层: `docs/specs/features/hooks-layering.md`
+- Verify 重构: `docs/specs/features/verify-redesign.md`
+- 迁移指南: `docs/migration/legacy-to-marketplace.md`
 
-Current direction:
+当前方向：
 
-- Core mode first (official Cursor plugin/hook flow)
-- Optional learning mode (`homunculus`) as an enhancement layer
-- Backward compatibility through an explicit `compat` layer
+- 优先核心模式（官方 Cursor 插件/hook 流程）
+- 可选学习模式（`homunculus`）作为增强层
+- 通过显式 `compat` 层保持向后兼容
 
-Implemented highlights:
+已实现要点：
 
-- `scripts/install.sh` now supports core/learning mode installation and layered hooks composition.
-- `scripts/verify-setup.sh` now supports mode-based verification with grouped checks.
-- `hooks/` is split into `core`, `compat`, and `learning` layers.
-- `observe.sh` now supports stdin-first parsing with environment-variable fallback.
+- `scripts/install.sh` 现支持 core/learning 模式安装及分层 hooks 组合。
+- `scripts/verify-setup.sh` 现支持基于模式的验证及分组检查。
+- `hooks/` 拆分为 `core`、`compat`、`learning` 三层。
+- `observe.sh` 现支持 stdin 优先解析，并支持环境变量回退。
 
-## TaskGraph protocol
+## TaskGraph 协议
 
-Task decomposition now follows a unified protocol:
+任务分解现遵循统一协议：
 
-- Protocol spec: `docs/architecture/task-graph-protocol.md`
-- Commands with protocol section:
+- 协议规范: `docs/architecture/task-graph-protocol.md`
+- 含协议段的命令：
   - `commands/orchestrate.md`
   - `commands/learn-project.md`
   - `commands/analyze.md`
   - `commands/implement.md`
   - `commands/review.md`
-- Routing alignment: `rules/agent-routing.md`
+- 路由对齐: `rules/agent-routing.md`
 
-To trigger parallel subagent cards in Cursor UI, ensure the command/prompt instructs the agent to launch multiple subagents in the same turn with concise `description` fields.
+若要在 Cursor UI 中触发并行 subagent 卡片，需确保命令/提示中指示 agent 在同一轮次启动多个 subagent，并包含简洁的 `description` 字段。
 
-## Validation checklist
+## 验证清单
 
 ```bash
 bash -n scripts/install.sh scripts/verify-setup.sh
@@ -123,6 +123,6 @@ bash scripts/verify-setup.sh --mode core --target <target-project>
 bash scripts/verify-setup.sh --mode learning --target <target-project>
 ```
 
-## License
+## 许可证
 
 MIT

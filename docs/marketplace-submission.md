@@ -1,6 +1,6 @@
-# Marketplace Submission Copy
+# Marketplace 提交文案
 
-This document contains ready-to-paste submission text for publishing `ecc-workflow` to Cursor Marketplace.
+本文档包含将 `ecc-workflow` 发布至 Cursor Marketplace 时可直接粘贴的提交文案。
 
 ## 中文版（可直接粘贴）
 
@@ -39,7 +39,7 @@ ecc-workflow 是一个面向 Cursor 的 Spec-driven（规格驱动）开发插�
 **维护状态**  
 - 当前状态：active maintenance（持续维护）
 
-## English Version (ready to paste)
+## English Version（英文版，供英文市场提交，可直接粘贴）
 
 **Plugin name**  
 ecc-workflow

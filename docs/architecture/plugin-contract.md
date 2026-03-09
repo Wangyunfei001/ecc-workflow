@@ -1,14 +1,14 @@
-# ECC Workflow Plugin Contract
+# ECC Workflow 插件契约
 
 ## 1. 目的与范围
 
-本文档定义 `ecc-workflow` 的插件契约（single source of truth），用于约束以下内容：
+本文档定义 `ecc-workflow` 的插件契约（唯一事实来源），用于约束以下内容：
 
 - `plugin.json` 字段与组件入口
 - 仓库目录与运行时目录的映射关系
 - hooks 配置优先级与双兼容边界
 
-本文档是后续重构 `scripts/install.sh` 与 `scripts/verify-setup.sh` 的唯一基线。
+本文档是后续重构 `scripts/install.sh` 与 `scripts/verify-setup.sh` 的唯一基线规范。
 
 ## 2. 规范来源
 

@@ -1,4 +1,4 @@
-# Verify Redesign Spec
+# 验证器重设计规格
 
 ## 1. 背景
 

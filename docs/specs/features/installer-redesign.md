@@ -1,4 +1,4 @@
-# Installer Redesign Spec
+# 安装器重设计规格
 
 ## 1. 背景
 

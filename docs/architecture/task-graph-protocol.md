@@ -1,33 +1,33 @@
-# TaskGraph Protocol
+# TaskGraph 协议
 
-## 1. Purpose
+## 1. 目的
 
-TaskGraph is the unified protocol for workflow decomposition in `ecc-workflow`.
-It standardizes how commands define:
+TaskGraph 是 `ecc-workflow` 中用于工作流分解的统一协议。
+它标准化了命令定义中的以下内容：
 
-- task breakdown
-- dependency order
-- parallel execution groups
-- merge strategy
-- checkpoints and acceptance criteria
+- 任务拆分
+- 依赖顺序
+- 并行执行分组
+- 合并策略
+- 检查点与验收标准
 
-This document is the single source of truth for command-level orchestration semantics.
+本文档是命令级编排语义的唯一事实来源。
 
-## 2. Minimal Schema
+## 2. 最小 Schema
 
 ```yaml
 workflow_id: wf-<date>-<name>
-goal: "Natural-language goal"
+goal: "自然语言目标描述"
 tasks:
   - id: T1
-    name: "<task name>"
-    owner: "<agent name>"
+    name: "<任务名称>"
+    owner: "<agent 名称>"
     depends_on: []
     parallelizable: false
     input: ["artifact-a"]
     output_schema: ["artifact-b", "report"]
     done_criteria:
-      - "<check item>"
+      - "<检查项>"
 checkpoints:
   - id: C1
     after_tasks: ["T2"]
@@ -37,86 +37,86 @@ merge:
   strategy: all_must_pass
 ```
 
-## 3. Field Definitions
+## 3. 字段定义
 
-### 3.1 Workflow Fields
+### 3.1 工作流字段
 
-- `workflow_id`: unique run identifier
-- `goal`: user-level objective
-- `tasks`: executable unit list
-- `checkpoints`: explicit pause nodes for human confirmation
-- `merge`: branch convergence policy
+- `workflow_id`：唯一运行标识符
+- `goal`：用户级目标
+- `tasks`：可执行单元列表
+- `checkpoints`：显式暂停节点，用于人工确认
+- `merge`：分支汇聚策略
 
-### 3.2 Task Fields
+### 3.2 任务字段
 
-- `id`: globally unique in workflow (`T1`, `T2`, ...)
-- `name`: stable task name
-- `owner`: designated agent role
-- `depends_on`: predecessor task ids
-- `parallelizable`: whether scheduler can run task concurrently
-- `input`: required artifacts or context keys
-- `output_schema`: expected outputs for downstream tasks
-- `done_criteria`: acceptance checklist
+- `id`：工作流内全局唯一（`T1`、`T2`、...）
+- `name`：稳定的任务名称
+- `owner`：指定的 agent 角色
+- `depends_on`：前置任务 id 列表
+- `parallelizable`：调度器是否可并行执行该任务
+- `input`：所需的制品或上下文键
+- `output_schema`：下游任务期望的输出
+- `done_criteria`：验收检查清单
 
-## 4. Scheduling Rules
+## 4. 调度规则
 
-1. A task is runnable only when all `depends_on` tasks succeed.
-2. A task can run in parallel only if:
+1. 仅当所有 `depends_on` 任务成功后，任务才可运行。
+2. 任务可并行执行的条件：
    - `parallelizable=true`
-   - all dependencies are satisfied
-   - no policy conflict exists (e.g., safety gate).
-3. Failed task behavior:
-   - block dependent tasks
-   - allow retry or fallback path if defined.
-4. Checkpoint behavior:
-   - workflow pauses after `after_tasks`
-   - resume requires explicit approval.
+   - 所有依赖已满足
+   - 不存在策略冲突（如安全门禁）。
+3. 任务失败行为：
+   - 阻塞依赖该任务的下游任务
+   - 如已定义，允许重试或走回退路径。
+4. 检查点行为：
+   - 工作流在 `after_tasks` 完成后暂停
+   - 恢复执行需要显式批准。
 
-## 5. Merge Strategy
+## 5. 合并策略
 
-Supported values:
+支持的值：
 
-- `all_must_pass`: all upstream branches must pass.
-- `best_effort`: proceed with partial pass and emit warnings.
-- `security_gate`: security branch must pass; others may be warnings.
+- `all_must_pass`：所有上游分支必须通过。
+- `best_effort`：部分通过即可继续，并发出警告。
+- `security_gate`：安全分支必须通过；其他分支可为警告。
 
-Default strategy for review branches is `all_must_pass`.
+审查分支的默认策略为 `all_must_pass`。
 
-## 6. Status Model
+## 6. 状态模型
 
-Each task uses one status:
+每个任务使用以下状态之一：
 
-- `pending`
-- `running`
-- `succeeded`
-- `failed`
-- `blocked`
-- `cancelled`
+- `pending`（待执行）
+- `running`（执行中）
+- `succeeded`（成功）
+- `failed`（失败）
+- `blocked`（阻塞）
+- `cancelled`（已取消）
 
-## 7. Protocol Priorities
+## 7. 协议优先级
 
-When protocol rules conflict:
+当协议规则冲突时：
 
-1. security policy
-2. dependency constraints
-3. explicit user override
-4. optimization preference (parallelization)
+1. 安全策略
+2. 依赖约束
+3. 用户显式覆盖
+4. 优化偏好（并行化）
 
-## 8. Command Mapping
+## 8. 命令映射
 
-- `/orchestrate`: full TaskGraph producer and scheduler.
-- `/learn-project`: phase-based TaskGraph with parallel extraction/doc generation.
-- `/analyze`: question decomposition TaskGraph (clarification graph).
-- `/implement`: spec-driven TaskGraph (implementation + test + report).
-- `/review`: multi-dimension review TaskGraph with merge.
+- `/orchestrate`：完整的 TaskGraph 生产者和调度器。
+- `/learn-project`：基于阶段的 TaskGraph，支持并行提取/文档生成。
+- `/analyze`：问题分解 TaskGraph（澄清图）。
+- `/implement`：Spec 驱动的 TaskGraph（实现 + 测试 + 报告）。
+- `/review`：多维度审查 TaskGraph，支持合并。
 
-## 9. Validation Hooks
+## 9. 验证钩子
 
-Validation should confirm:
+验证应确认：
 
-- schema presence
-- dependency soundness (no orphan dependency)
-- merge node references valid task ids
-- checkpoint references valid upstream tasks
+- Schema 存在性
+- 依赖健全性（无孤立依赖）
+- 合并节点引用的任务 id 有效
+- 检查点引用的上游任务有效
 
-`scripts/verify-setup.sh --mode learning` includes protocol capability probes.
+`scripts/verify-setup.sh --mode learning` 包含协议能力探针。

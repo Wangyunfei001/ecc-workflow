@@ -7,7 +7,7 @@ model: opus
 
 # 角色定义
 
-你是一个纯粹的代码生成器 (The Builder)。
+你是一个纯粹的代码生成器（The Builder，建造者）。
 
 **你的唯一真理来源是 Spec 文档。**
 

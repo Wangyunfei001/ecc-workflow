@@ -23,8 +23,11 @@ description: 编排完整的开发流程。
 
 流程：
 ```
-planner → spec-writer → Human Review → strict-coder → code-reviewer → security-reviewer → librarian
+requirement-analyst → [Gate 1] → planner → spec-writer → [Gate 4: Human Review] → strict-coder → code-reviewer → security-reviewer → librarian
 ```
+
+> **⚠️ 重要**：`requirement-analyst` 阶段**必须**进行多轮需求澄清（结构化追问），
+> 确保需求清晰后才能进入后续阶段。禁止跳过此阶段直接开始规划。
 
 ### bugfix — Bug 修复
 
@@ -71,6 +74,33 @@ security-reviewer → code-reviewer → architect
 
 每个 Agent 完成后，将输出交接给下一个 Agent。
 
+#### feature 工作流详细步骤
+
+**Step 1: requirement-analyst（需求澄清）**
+- 使用 `@requirement-analyst` 进行**多轮结构化追问**
+- **必须**覆盖：用户场景、功能范围、验收标准、约束依赖、优先级
+- 每轮最多 5 个问题，追问 → 回答 → 追问 → … → 确认
+- 追问清单完成度 >=80% 才能通过
+- 输出：`docs/requirements/YYYY-MM-DD-<name>.md`
+- **暂停**等待用户确认（Gate 1）
+
+**Step 2: planner（任务规划）**
+- Gate 1 通过后，使用 `@planner` 分析需求文档
+- 拆解任务、识别依赖、评估风险
+- 输出：`docs/plans/YYYY-MM-DD-<name>.md`
+
+**Step 3: spec-writer（规格撰写）**
+- 使用 `@spec-writer` 生成技术规格
+- 输出：`docs/specs/features/<name>.md`
+- **暂停**等待用户确认（Gate 4）
+
+**Step 4-6: 实现 → 审查 → 同步**
+- `@strict-coder` 严格按 Spec 实现
+- `@code-reviewer` + `@security-reviewer` 审查
+- `@librarian` 同步文档
+
+#### 交接模板
+
 ```markdown
 ## HANDOFF: planner → spec-writer
 
@@ -109,8 +139,24 @@ strict-coder
 在关键节点暂停，等待人工确认：
 
 ```
-planner ──▶ spec-writer ──▶ [CHECKPOINT: Human Review] ──▶ strict-coder
+requirement-analyst ──▶ [CHECKPOINT: Gate 1 需求确认] ──▶ planner ──▶ spec-writer ──▶ [CHECKPOINT: Gate 4 Spec审查] ──▶ strict-coder
 ```
+
+#### Gate 1 — 需求确认
+
+```markdown
+⏸️ **检查点: 需求澄清完成**
+
+需求文档已生成: docs/requirements/YYYY-MM-DD-xxx.md
+
+请审查并确认：
+1. 追问清单已完成 (>=80%)
+2. 核心功能、边界、验收标准已明确
+3. 确认后将 status 改为 approved
+4. 回复 "继续" 进入规划阶段，或 "补充 [内容]"
+```
+
+#### Gate 4 — Spec 审查
 
 ```markdown
 ⏸️ **检查点: Spec 审查**
@@ -132,10 +178,15 @@ Spec 已生成: docs/specs/features/user-login.md
 
 **工作流:** feature
 **任务:** 用户登录功能
-**Agent 链:** planner → spec-writer → strict-coder → code-reviewer → librarian
-**总耗时:** 45 分钟
+**Agent 链:** requirement-analyst → planner → spec-writer → strict-coder → code-reviewer → librarian
+**总耗时:** 55 分钟
 
 ## 📝 各阶段输出
+
+### Requirement Analyst (10 min)
+- 进行 3 轮需求澄清
+- 追问清单完成度: 90%
+- 输出: docs/requirements/2026-02-02-login.md
 
 ### Planner (5 min)
 - 拆解为 8 个子任务
@@ -173,8 +224,9 @@ Spec 已生成: docs/specs/features/user-login.md
 
 ## ✅ 完成状态
 
+- [x] 需求澄清完成 (Gate 1 通过)
 - [x] 规划完成
-- [x] Spec 已批准
+- [x] Spec 已批准 (Gate 4 通过)
 - [x] 代码实现
 - [x] 审查通过
 - [x] 文档同步

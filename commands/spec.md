@@ -73,12 +73,29 @@ created: YYYY-MM-DD
 | `--template` | 使用自定义模板 | 标准模板 |
 | `--category` | 分类 (feature/api/component) | feature |
 
-## 下一步
+## 完成后必须输出
 
-生成 Spec 后：
-1. 在 Obsidian 中审查文档
-2. 修改并将 `status` 改为 `approved`
-3. 运行 `/implement @docs/specs/xxx.md`
+当 Spec 生成完成后，**必须**在回复末尾显示以下引导块：
+
+```markdown
+---
+
+✅ **Spec 生成完成**
+
+📄 Spec 文档已保存: `docs/specs/features/<name>.md`
+
+🚧 **Gate 4 检查清单**:
+- [ ] 数据模型定义完整
+- [ ] API 设计覆盖所有需求
+- [ ] 边界情况已列出
+- [ ] 测试策略已定义
+
+👉 **下一步操作**:
+1. 审查 Spec 文档，将 `status: draft` → `status: approved`
+2. 然后执行: `/implement @docs/specs/features/<name>.md` 开始代码实现
+```
+
+> **⚠️ 规则**: 此引导块为强制输出项，不可省略。
 
 ## 相关命令
 

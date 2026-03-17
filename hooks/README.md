@@ -1,246 +1,145 @@
-# Hooks 配置说明
+# Hooks 配置说明（Cursor 新版格式）
 
-Hooks 是 Cursor 的自动化触发器，在特定事件发生时自动执行操作。
+Hooks 是 Cursor 的自动化触发器，在特定事件发生时执行脚本。
 
-## 两种 Hooks 配置
+> 本仓库已升级到 Cursor 新版 hooks schema：顶层必须包含 `version`（数字）和 `hooks`（对象）。
 
-本工作流包含**两种 Hooks 配置**，服务于不同目的：
+## 配置文件位置
 
-### 1. 项目级 Hooks（`.cursor/hooks/hooks.json`）
+### 1) 项目级（推荐）
 
-**用途：** 代码质量检查、格式化、安全提醒
+放在项目根目录：
 
-**配置格式：**
+- `.cursor/hooks.json`
+
+### 2) 用户级
+
+放在用户目录：
+
+- `~/.cursor/hooks.json`
+- 或 `~/.cursor/settings.json` 中的 `hooks` 字段
+
+## 新版最小格式
+
 ```json
 {
-  "PreToolUse": [
-    {
-      "name": "Hook 名称",
-      "matcher": "tool == 'Write' && tool_input.path matches '.*\\.ts$'",
-      "hooks": [{ "type": "command", "command": "..." }]
-    }
-  ]
-}
-```
-
-### 2. 用户级 Hooks（`~/.cursor/settings.json`）
-
-**用途：** 持续学习系统的观察收集
-
-**配置格式（需手动添加到 settings.json）：**
-```json
-{
+  "version": 1,
   "hooks": {
-    "PreToolUse": [{
-      "matcher": "*",
-      "hooks": [{
-        "type": "command",
-        "command": "~/.cursor/hooks/observe.sh pre"
-      }]
-    }],
-    "PostToolUse": [{
-      "matcher": "*",
-      "hooks": [{
-        "type": "command",
-        "command": "~/.cursor/hooks/observe.sh post"
-      }]
-    }]
+    "stop": [
+      {
+        "command": "node .cursor/hooks/stop.js"
+      }
+    ]
   }
 }
 ```
 
-### 配置优先级
+## 事件名映射（旧版 -> 新版）
 
-```
-用户级配置 (~/.cursor/settings.json)
-         │
-         ▼ 合并
-项目级配置 (.cursor/hooks/hooks.json)
-         │
-         ▼
-     最终生效
-```
+| 旧版名称 | 新版名称 |
+|------|------|
+| `PreToolUse` | `preToolUse` |
+| `PostToolUse` | `postToolUse` |
+| `UserPromptSubmit` | `beforeSubmitPrompt` |
+| `Stop` | `stop` |
 
----
+## ecc-workflow 当前 hooks 分层
 
-## Hook 类型
+- `hooks.core.json`：核心质量与安全规则（默认必选）
+- `hooks.compat.json`：历史行为兼容层（默认合并）
+- `hooks.learning.json`：continuous-learning 增强层（仅 `--enable-learning` 时合并）
+- `hooks.json`：核心基线配置（可直接使用）
 
-| 类型 | 触发时机 | 用途 |
-|------|----------|------|
-| PreToolUse | 工具调用前 | 验证、提醒、阻止 |
-| PostToolUse | 工具调用后 | 格式化、检查、通知 |
-| UserPromptSubmit | 用户发送消息时 | 检测关键词、建议 |
-| Stop | Claude 响应结束时 | 统计、清理、提醒 |
-| PreCompact | 上下文压缩前 | 保存重要信息 |
-| Notification | 权限请求时 | 自定义通知 |
+安装脚本会在安装时合成项目级 `.cursor/hooks.json`。
 
-## 当前配置的 Hooks
+## ecc-workflow 当前 hooks 覆盖
 
-### PreToolUse
-
-| Hook | 触发条件 | 行为 |
-|------|----------|------|
-| 代码写入提醒 | 写入 .ts/.vue 文件 | 提醒检查 Spec |
-| 长时间命令提醒 | 运行 npm/yarn 等 | 建议使用 tmux |
-| Git Push 确认 | git push 命令 | 提醒审查 |
-| 禁止直接 Push | push 到 main/master | 阻止并提醒 |
-
-### PostToolUse
-
-| Hook | 触发条件 | 行为 |
-|------|----------|------|
-| TypeScript 检查 | 编辑 .ts/.vue | 运行 vue-tsc --noEmit |
-| Prettier 格式化 | 编辑代码文件 | 自动格式化 |
-| console.log 检查 | 编辑代码文件 | 警告移除 |
-| 文档同步提醒 | 编辑 API/类型 | 提醒运行 /sync |
-| 安全文件警告 | 编辑安全相关文件 | 建议安全审查 |
-
-### UserPromptSubmit
-
-| Hook | 触发条件 | 行为 |
-|------|----------|------|
-| Bug 关键词检测 | 包含错误关键词 | 建议使用 bug-hunter |
-
-### Stop
-
-| Hook | 触发条件 | 行为 |
-|------|----------|------|
-| 变更统计 | 每次会话结束 | 显示变更文件 |
-| 文档同步提醒 | 代码有变更 | 提醒同步 |
+| 事件 | 行为 |
+|------|------|
+| `preToolUse` | 写代码提醒、长命令 tmux 提示、`git push` 风险提醒 |
+| `postToolUse` | TS 检查、Prettier、`console.log` 检测、文档同步与安全提醒 |
+| `beforeSubmitPrompt` | Bug 关键词检测，建议使用 `@bug-hunter` |
+| `stop` | 会话结束变更统计与文档同步提醒 |
 
 ## 安装方式
 
-### 方式 1: 项目级配置
-
-将 `hooks.json` 复制到项目根目录：
+最小手工安装（核心基线）：
 
 ```bash
-cp .cursor/hooks/hooks.json .cursor/hooks.json
+mkdir -p .cursor
+cp hooks/hooks.json .cursor/hooks.json
 ```
 
-### 方式 2: 用户级配置
-
-合并到用户配置：
+分层模式推荐通过安装脚本：
 
 ```bash
-# 查看用户配置
-cat ~/.cursor/settings.json
-
-# 将 hooks 配置合并到 settings.json 的 hooks 字段
+echo "Y" | bash scripts/install.sh --verify-after
+echo "Y" | bash scripts/install.sh --enable-learning --verify-after
 ```
 
-## 自定义 Hook
-
-### 添加新 Hook
-
-编辑 `hooks.json`：
-
-```json
-{
-  "PostToolUse": [
-    {
-      "name": "自定义 Hook 名称",
-      "description": "描述",
-      "matcher": "tool == 'Write' && tool_input.path matches '*.py$'",
-      "hooks": [
-        {
-          "type": "command",
-          "command": "your-command-here"
-        }
-      ]
-    }
-  ]
-}
-```
-
-### Matcher 语法
-
-```javascript
-// 工具匹配
-tool == 'Write'
-tool == 'Bash'
-tool == 'Read'
-
-// 输入参数匹配
-tool_input.path matches '.*\\.ts$'
-tool_input.command matches 'git push.*'
-
-// 组合条件
-tool == 'Write' && tool_input.path matches '.*\\.ts$'
-
-// 用户输入匹配
-user_prompt matches '.*bug.*'
-```
-
-### Hook 类型
-
-```json
-// 消息提示
-{
-  "type": "message",
-  "message": "提示内容"
-}
-
-// 执行命令
-{
-  "type": "command",
-  "command": "shell-command-here"
-}
-```
-
-## 常用变量
+## 常用环境变量（在 command 中可用）
 
 | 变量 | 说明 |
 |------|------|
-| `${TOOL_INPUT_PATH}` | 文件路径（Write 操作） |
-| `${TOOL_INPUT_COMMAND}` | 命令内容（Bash 操作） |
-| `${USER_PROMPT}` | 用户输入内容 |
+| `${TOOL_INPUT_PATH}` | 文件路径（`Write` 相关） |
+| `${TOOL_INPUT_COMMAND}` | Shell 命令内容（`Shell` 相关） |
+| `${USER_PROMPT}` | 用户输入（`beforeSubmitPrompt`） |
 
-## 调试
+## observe.sh 输入兼容策略
 
-### 查看 Hook 执行日志
+`skills/continuous-learning/hooks/observe.sh` 采用以下优先级读取上下文：
 
-```bash
-# 查看最近的 Hook 执行
-tail -f ~/.cursor/logs/hooks.log
-```
+1. **stdin JSON**（优先，面向新版 hooks 事件输入）
+2. **环境变量**（兜底，兼容旧配置）
 
-### 禁用 Hook
+说明：
 
-临时禁用所有 Hooks：
+- 如果存在可解析的 stdin JSON，会优先读取 `tool_name/tool_input/tool_output/user_prompt/session_id`（含常见别名）。
+- 若 stdin 不可用或不可解析，则回退到 `TOOL_NAME`、`TOOL_INPUT`、`TOOL_OUTPUT`、`USER_PROMPT`、`SESSION_ID`。
+- 脚本在 TTY 下不会主动读取 stdin，避免手工执行时阻塞。
+- 记录结构中：
+  - `input` 始终是合法 JSON（非法输入时降级为 `{}`）
+  - `input_raw` 在输入非法时保留原始字符串，否则为 `null`
 
-```bash
-# 在 settings.json 中设置
+## TypeScript Stop Hook 示例
+
+文档中的 TypeScript stop hook 形态可写成：
+
+```json
 {
+  "version": 1,
   "hooks": {
-    "enabled": false
+    "stop": [
+      {
+        "command": "bun run hooks/stop.ts"
+      }
+    ]
   }
 }
 ```
 
-禁用特定 Hook：
+## 常见报错与修复
 
-```json
-{
-  "PreToolUse": [
-    {
-      "name": "要禁用的 Hook",
-      "enabled": false,
-      "matcher": "...",
-      "hooks": [...]
-    }
-  ]
-}
-```
+### 报错：`Config version must be a number`
+
+原因：`version` 写成了字符串（如 `"1.0.0"`）。  
+修复：改成数字 `1`。
+
+### 报错：`Config hooks must be an object`
+
+原因：缺少 `hooks` 顶层对象，或仍使用旧版 `PreToolUse` 顶层结构。  
+修复：改为 `{ "version": 1, "hooks": { ... } }`。
 
 ## 最佳实践
 
-1. **Hook 应该轻量** — 避免耗时操作阻塞主流程
-2. **使用 || true 兜底** — 防止命令失败中断流程
-3. **限制输出** — 使用 `head -N` 限制输出行数
-4. **错误输出到 stderr** — 使用 `>&2` 确保消息可见
+1. Hook 尽量轻量，避免阻塞主流程
+2. 非关键命令加 `|| true`，降低失败影响
+3. 输出到 `stderr`（`>&2`）便于在面板中观察
+4. 阻止危险操作时使用 `exit 2`
+5. TaskGraph 协议相关事件（任务拆解/并行编排）优先通过 learning 层观察，不放入 core 阻断路径
+6. 并行 subagent 的可观测性依赖 `preToolUse/postToolUse` + `observe.sh`，建议定期运行 verify learning 模式
 
 ## 相关资源
 
-- [Cursor Hooks 文档](https://docs.cursor.com/hooks)
-- [ECC Hooks 参考](https://github.com/affaan-m/everything-claude-code)
+- [Cursor Hooks（中文）](https://cursor.com/cn/docs/agent/hooks)
+- [Third Party Hooks](https://cursor.com/docs/agent/third-party-hooks)

@@ -58,6 +58,47 @@ description: 基于 Spec 文档实现代码。
    - 列出变更文件
    - 提示下一步
 
+## TaskGraph 协议（推荐）
+
+`/implement` 应以 Spec 产物为输入，按“实现 -> 测试 -> 报告”闭环执行。
+
+```yaml
+workflow_id: wf-implement-from-spec
+goal: "按 approved spec 实现并验证"
+tasks:
+  - id: T0
+    name: validate_spec_gate
+    owner: strict-coder
+    depends_on: []
+    parallelizable: false
+    done_criteria:
+      - "spec status = approved"
+      - "spec 结构完整"
+  - id: T1
+    name: build_implementation_plan
+    owner: strict-coder
+    depends_on: [T0]
+    parallelizable: false
+  - id: T2
+    name: implement_items
+    owner: strict-coder
+    depends_on: [T1]
+    parallelizable: true
+  - id: T3
+    name: add_and_run_tests
+    owner: strict-coder
+    depends_on: [T2]
+    parallelizable: false
+  - id: T4
+    name: publish_progress_report
+    owner: strict-coder
+    depends_on: [T3]
+    parallelizable: false
+merge:
+  after: [T2]
+  strategy: all_must_pass
+```
+
 ## 核心原则
 
 ### 严格模式

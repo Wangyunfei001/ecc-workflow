@@ -240,7 +240,7 @@ jobs:
 
 ## ✅ 结论
 
-**状态:** PASSED (with warnings)
+**状态:** 通过（有警告）
 **建议:** 补充 helpers.ts 的测试后合并
 ```
 

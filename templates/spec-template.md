@@ -93,10 +93,10 @@ enum Status {
 
 | 方法 | 端点 | 描述 | 权限 |
 |------|------|------|------|
-| POST | /api/resources | 创建资源 | authenticated |
-| GET | /api/resources/:id | 获取资源 | authenticated |
-| PUT | /api/resources/:id | 更新资源 | owner |
-| DELETE | /api/resources/:id | 删除资源 | admin |
+| POST | /api/resources | 创建资源 | authenticated（已认证） |
+| GET | /api/resources/:id | 获取资源 | authenticated（已认证） |
+| PUT | /api/resources/:id | 更新资源 | owner（拥有者） |
+| DELETE | /api/resources/:id | 删除资源 | admin（管理员） |
 
 ### 4.2 详细定义
 
@@ -204,7 +204,7 @@ interface PageState {
 - [ ] 输入校验（防 XSS、SQL 注入）
 - [ ] 权限验证
 - [ ] 敏感数据加密
-- [ ] Rate Limiting
+- [ ] 速率限制（Rate Limiting）
 - [ ] 审计日志
 
 ---

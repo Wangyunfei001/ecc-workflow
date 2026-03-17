@@ -2,7 +2,7 @@
 
 ## 状态
 
-[Proposed | Accepted | Deprecated | Superseded by ADR-xxx]
+[Proposed（提议）| Accepted（已接受）| Deprecated（已弃用）| Superseded by ADR-xxx（被 ADR-xxx 取代）]
 
 ## 日期
 

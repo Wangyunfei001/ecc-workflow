@@ -78,6 +78,74 @@ description: 主动学习项目。深度分析代码库，提取架构、规范�
 └─────────────────────────────────────────────────────────────┘
 ```
 
+## TaskGraph 协议（推荐）
+
+`/learn-project` 建议使用 phase 级 TaskGraph，并在 Phase 3/4 内部启用并行子任务。
+
+```yaml
+workflow_id: wf-learn-project-medium
+goal: "学习项目并生成知识与初始 instincts"
+tasks:
+  - id: T1
+    name: project_scan
+    owner: explore
+    depends_on: []
+    parallelizable: false
+  - id: T2
+    name: deep_analysis
+    owner: explore
+    depends_on: [T1]
+    parallelizable: false
+  - id: T3A
+    name: extract_architecture
+    owner: explore
+    depends_on: [T2]
+    parallelizable: true
+  - id: T3B
+    name: extract_structure
+    owner: explore
+    depends_on: [T2]
+    parallelizable: true
+  - id: T3C
+    name: extract_code_style
+    owner: explore
+    depends_on: [T2]
+    parallelizable: true
+  - id: T3D
+    name: extract_api
+    owner: explore
+    depends_on: [T2]
+    parallelizable: true
+  - id: T3E
+    name: extract_business
+    owner: explore
+    depends_on: [T2]
+    parallelizable: true
+  - id: T3F
+    name: extract_testing
+    owner: explore
+    depends_on: [T2]
+    parallelizable: true
+  - id: T4
+    name: generate_docs
+    owner: explore
+    depends_on: [T3A, T3B, T3C, T3D, T3E, T3F]
+    parallelizable: true
+  - id: T5
+    name: generate_instincts
+    owner: explore
+    depends_on: [T4]
+    parallelizable: false
+  - id: T6
+    name: final_report
+    owner: explore
+    depends_on: [T5]
+    parallelizable: false
+merge:
+  after: [T3A, T3B, T3C, T3D, T3E, T3F]
+  strategy: all_must_pass
+```
+
 ## 学习深度
 
 | 深度 | 时长 | 分析范围 | 生成Instincts |

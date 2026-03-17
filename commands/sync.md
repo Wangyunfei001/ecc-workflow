@@ -71,7 +71,7 @@ description: 同步文档与代码。
 ```markdown
 ⚠️ **需要确认**
 
-检测到以下变更可能是 Breaking Change：
+检测到以下变更可能是破坏性变更（Breaking Change）：
 
 1. **删除字段: User.avatar**
    - 是否从 Spec 中移除？ [Y/n]

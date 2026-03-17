@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "matcher": "*",
+        "command": "if [ -x \"$HOME/.cursor/hooks/observe.sh\" ]; then \"$HOME/.cursor/hooks/observe.sh\" pre || true; fi"
+      }
+    ],
+    "postToolUse": [
+      {
+        "matcher": "*",
+        "command": "if [ -x \"$HOME/.cursor/hooks/observe.sh\" ]; then \"$HOME/.cursor/hooks/observe.sh\" post || true; fi"
+      }
+    ],
+    "beforeSubmitPrompt": [
+      {
+        "command": "if echo \"${USER_PROMPT:-}\" | grep -Eqi '(报错|bug|错误|异常|TypeError|Error:)'; then echo 'Bug-like prompt detected. Consider using @bug-hunter for structured diagnosis.' >&2; fi"
+      }
+    ],
+    "stop": [
+      {
+        "command": "if git diff --name-only 2>/dev/null | grep -q 'src/'; then echo 'Code changed. Consider running /sync to keep docs aligned.' >&2; fi || true"
+      }
+    ]
+  }
+}

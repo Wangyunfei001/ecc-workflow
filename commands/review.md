@@ -58,6 +58,54 @@ description: 执行代码审查。
 
 4. **输出报告**
 
+## TaskGraph 协议（推荐）
+
+`/review` 的 4 个审查维度可并行执行，最终统一合并结论。
+
+```yaml
+workflow_id: wf-review-change-set
+goal: "产出可执行的审查结论"
+tasks:
+  - id: T1
+    name: collect_changes
+    owner: code-reviewer
+    depends_on: []
+    parallelizable: false
+  - id: T2A
+    name: security_review
+    owner: security-reviewer
+    depends_on: [T1]
+    parallelizable: true
+  - id: T2B
+    name: quality_review
+    owner: code-reviewer
+    depends_on: [T1]
+    parallelizable: true
+  - id: T2C
+    name: performance_review
+    owner: code-reviewer
+    depends_on: [T1]
+    parallelizable: true
+  - id: T2D
+    name: style_review
+    owner: code-reviewer
+    depends_on: [T1]
+    parallelizable: true
+  - id: T3
+    name: spec_compliance_review
+    owner: code-reviewer
+    depends_on: [T2A, T2B, T2C, T2D]
+    parallelizable: false
+  - id: T4
+    name: merge_and_publish_report
+    owner: code-reviewer
+    depends_on: [T3]
+    parallelizable: false
+merge:
+  after: [T2A, T2B, T2C, T2D]
+  strategy: all_must_pass
+```
+
 ## 审查维度
 
 ### 🔴 CRITICAL — 安全漏洞

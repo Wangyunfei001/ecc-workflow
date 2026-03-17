@@ -132,6 +132,59 @@ strict-coder
      └──▶ 合并结果
 ```
 
+### TaskGraph 协议（推荐）
+
+`/orchestrate` 应优先按 TaskGraph 解释执行，而不是仅依赖自然语言箭头链。
+
+```yaml
+workflow_id: wf-feature-user-login
+goal: "实现用户登录功能"
+tasks:
+  - id: T1
+    name: planning
+    owner: planner
+    depends_on: []
+    parallelizable: false
+  - id: T2
+    name: spec_writing
+    owner: spec-writer
+    depends_on: [T1]
+    parallelizable: false
+  - id: T3
+    name: implementation
+    owner: strict-coder
+    depends_on: [T2]
+    parallelizable: false
+  - id: T4
+    name: quality_review
+    owner: code-reviewer
+    depends_on: [T3]
+    parallelizable: true
+  - id: T5
+    name: security_review
+    owner: security-reviewer
+    depends_on: [T3]
+    parallelizable: true
+  - id: T6
+    name: doc_sync
+    owner: librarian
+    depends_on: [T4, T5]
+    parallelizable: false
+checkpoints:
+  - id: C1
+    after_tasks: [T2]
+    type: human_review
+merge:
+  after: [T4, T5]
+  strategy: all_must_pass
+```
+
+执行规则：
+
+- 仅当 `depends_on` 全部完成后，任务可进入运行态
+- 仅 `parallelizable=true` 的任务可并行
+- 审查并行分支必须经过统一合并策略再进入下游任务
+
 ## 检查点
 
 ### 人工介入点
@@ -242,6 +295,7 @@ Spec 已生成: docs/specs/features/user-login.md
 | `--skip-security` | 跳过安全审查 | false |
 | `--auto-approve` | 自动批准检查点 | false |
 | `--output` | 输出报告路径 | - |
+| `--task-graph` | 输出本次执行的 TaskGraph | false |
 
 ## 常用场景
 

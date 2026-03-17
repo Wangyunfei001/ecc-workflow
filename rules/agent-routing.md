@@ -13,7 +13,8 @@ alwaysApply: false
 
 | 触发条件 | 激活 Agent | 优先级 |
 |----------|------------|--------|
-| 请求开发新功能 | `planner` | 高 |
+| 新功能需求（未经澄清） | `requirement-analyst` | 最高 |
+| 请求开发新功能（需求已批准） | `planner` | 高 |
 | 需要写技术规格 | `spec-writer` | 高 |
 | Spec 已批准，需要实现 | `strict-coder` | 高 |
 | 代码刚写完/修改 | `code-reviewer` | 高 |
@@ -26,6 +27,18 @@ alwaysApply: false
 ### 关键词触发
 
 ```yaml
+requirement-analyst:
+  keywords:
+    - "需求分析"
+    - "需求澄清"
+    - "分析需求"
+  patterns:
+    - "我想做一个..."
+    - "帮我实现..."
+    - "我需要..."
+    - "开发一个..."
+  note: "当需求未经澄清时，优先触发 requirement-analyst 而非 planner"
+
 planner:
   keywords:
     - "开发功能"
@@ -33,8 +46,8 @@ planner:
     - "实现需求"
     - "功能规划"
   patterns:
-    - "我想做一个..."
-    - "帮我实现..."
+    - "基于需求文档规划..."
+    - "帮我拆解任务..."
 
 spec-writer:
   keywords:
@@ -114,13 +127,19 @@ librarian:
 用户: "我要开发用户登录功能"
      │
      ▼
-[planner] 分析需求
+[requirement-analyst] 需求澄清（多轮追问）
+     │
+     ▼
+Gate 1 (需求确认)
+     │
+     ▼ (approved)
+[planner] 任务规划
      │
      ▼
 [spec-writer] 撰写 Spec
      │
      ▼
-Human Review (检查点)
+Gate 4 / Human Review (检查点)
      │
      ▼ (approved)
 [strict-coder] 实现代码
@@ -238,15 +257,17 @@ taskgraph_scheduler:
 用户: "实现用户密码重置功能"
 
 匹配:
+- requirement-analyst (模式: "实现...功能"，需求未澄清)
 - planner (关键词: 功能)
 - spec-writer (关键词: 功能)
 - security-reviewer (关键词: 密码)
 
 执行顺序:
-1. planner (先规划)
-2. spec-writer (再写 Spec)
-3. strict-coder (实现时)
-4. security-reviewer (审查时，因为涉及密码)
+1. requirement-analyst (先澄清需求，多轮追问)
+2. planner (需求 approved 后规划)
+3. spec-writer (再写 Spec)
+4. strict-coder (实现时)
+5. security-reviewer (审查时，因为涉及密码)
 ```
 
 ## 手动覆盖
@@ -433,7 +454,7 @@ go-build-resolver:
 #### Go 项目完整流程
 
 ```
-需求 ──▶ [planner] ──▶ [spec-writer] ──▶ Human Review
+需求 ──▶ [requirement-analyst] ──▶ Gate 1 ──▶ [planner] ──▶ [spec-writer] ──▶ Gate 4 / Human Review
                                               │
                                               ▼ (approved)
                                         [strict-coder]

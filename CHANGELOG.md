@@ -1,5 +1,13 @@
 # 更新日志
 
+## 1.1.2 - 2026-03-17
+
+- 修复 `skills/continuous-learning/hooks/observe.sh` 文件权限：从 `644` 改为 `755`（添加可执行位），确保 Cursor hooks 运行时能直接调用。
+- 修复 `/orchestrate` 特性工作流：新增 requirement-analyst 作为第一阶段（Phase 1），添加 Gate 1 需求确认检查点，更新 `rules/agent-routing.md` 路由优先级。
+- 修复所有命令（`/analyze`、`/spec`、`/implement`、`/review`、`/sync`）：新增 `完成后必须输出` 强制下一步推荐输出块，确保工作流步骤完成后始终显示可操作的下一步提示。
+- 文档全量中文化：将 `AGENTS.md`、`CHANGELOG.md`、`README.md`、架构文档、规格文档、迁移指南、规则、模板等全部翻译为中文。
+- 新增 Obsidian 初始配置文件（`app.json`、`appearance.json`、`core-plugins.json`、`workspace.json`）。
+
 ## 1.1.0 - 2026-02-25
 
 - 新增 TaskGraph 协议以支持多智能体编排：

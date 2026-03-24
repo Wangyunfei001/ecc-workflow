@@ -1,0 +1,23 @@
+# handoff.yml.example
+# Agent 交接协议模板，由上游 Agent 生成，供下游 Agent 读取
+
+from: "planner"                     # 交接发起方
+to: "spec-writer"                   # 交接接收方
+timestamp: "2026-03-23T10:00:00Z"   # 交接时间
+
+# 上下游依赖的关键文件输入
+spec_inputs:
+  requirement: "docs/requirements/2026-03-23-feature.md"
+  plan: "docs/plans/2026-03-23-feature.md"
+  architecture: "docs/architecture/feature.md"
+
+# 核心决策列表，避免下游 Agent 重新探索
+key_decisions:
+  - "使用 JWT 而非 Session 维持状态"
+  - "数据库采用 PostgreSQL，不引入 Redis"
+
+# 阻碍点或未决问题
+blockers: []
+
+# 强制门禁状态 (必须为 approved 才可流入下游)
+gate_status: "approved"

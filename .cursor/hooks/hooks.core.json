@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "matcher": "Write",
+        "command": "if echo \"${TOOL_INPUT_PATH:-}\" | grep -Eq '\\.(ts|tsx|js|jsx)$'; then echo 'Ensure changed code still matches the approved spec.' >&2; fi"
+      },
+      {
+        "matcher": "Shell",
+        "command": "if echo \"${TOOL_INPUT_COMMAND:-}\" | grep -Eq '^git push'; then echo 'About to push changes. Confirm review and tests are complete.' >&2; fi"
+      },
+      {
+        "matcher": "Shell",
+        "command": "if echo \"${TOOL_INPUT_COMMAND:-}\" | grep -Eq '^git push.*(main|master)( |$)'; then echo 'Direct pushes to main/master are blocked. Use a PR flow.' >&2; exit 2; fi"
+      }
+    ],
+    "postToolUse": [
+      {
+        "matcher": "Write",
+        "command": "if echo \"${TOOL_INPUT_PATH:-}\" | grep -Eq '\\.tsx?$'; then npx tsc --noEmit --pretty 2>&1 | head -20 || true; fi"
+      },
+      {
+        "matcher": "Write",
+        "command": "if echo \"${TOOL_INPUT_PATH:-}\" | grep -Eq '\\.(ts|tsx|js|jsx|css|json)$'; then npx prettier --write \"${TOOL_INPUT_PATH}\" 2>/dev/null || true; fi"
+      }
+    ],
+    "beforeSubmitPrompt": [],
+    "stop": [
+      {
+        "command": "echo 'Changed files in current session:' && git diff --name-only 2>/dev/null | head -10 || true"
+      }
+    ]
+  }
+}

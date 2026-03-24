@@ -4,6 +4,11 @@
 # 默认: marketplace core 模式
 # 可选: --enable-learning 启用 continuous-learning 增强
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if command -v node >/dev/null 2>&1 && [ -f "$SCRIPT_DIR/install.mjs" ]; then
+    exec node "$SCRIPT_DIR/install.mjs" "$@"
+fi
+
 set -euo pipefail
 
 RED='\033[0;31m'
@@ -208,7 +213,16 @@ if [ "$ENABLE_LEARNING" = true ]; then
     if [ -f "$WORKFLOW_DIR/skills/continuous-learning/hooks/observe.sh" ]; then
         run_cmd "cp \"$WORKFLOW_DIR/skills/continuous-learning/hooks/observe.sh\" \"$USER_CURSOR_DIR/hooks/observe.sh\""
         run_cmd "chmod +x \"$USER_CURSOR_DIR/hooks/observe.sh\""
-        echo -e "  ✓ observe.sh 已安装到 ~/.cursor/hooks/"
+        if [ -f "$WORKFLOW_DIR/skills/continuous-learning/hooks/observe.mjs" ]; then
+            run_cmd "cp \"$WORKFLOW_DIR/skills/continuous-learning/hooks/observe.mjs\" \"$USER_CURSOR_DIR/hooks/observe.mjs\""
+        fi
+        if [ -f "$WORKFLOW_DIR/scripts/batch-observations.mjs" ]; then
+            run_cmd "cp \"$WORKFLOW_DIR/scripts/batch-observations.mjs\" \"$USER_CURSOR_DIR/hooks/batch-observations.mjs\""
+        fi
+        if [ -f "$WORKFLOW_DIR/scripts/instinct-decay.mjs" ]; then
+            run_cmd "cp \"$WORKFLOW_DIR/scripts/instinct-decay.mjs\" \"$USER_CURSOR_DIR/hooks/instinct-decay.mjs\""
+        fi
+        echo -e "  ✓ observe.sh (和 observe.mjs 及相关 hooks) 已安装到 ~/.cursor/hooks/"
     else
         echo -e "  ${YELLOW}⚠ 未找到 observe.sh，跳过${NC}"
     fi

@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "matcher": "Shell",
+        "command": "if echo \"${TOOL_INPUT_COMMAND:-}\" | grep -Eq '^(npm|pnpm|yarn|cargo|pytest|jest)'; then if [ -z \"$TMUX\" ]; then echo '[Compat] Recommend tmux for long-running command resilience.' >&2; fi; fi"
+      }
+    ],
+    "postToolUse": [
+      {
+        "matcher": "Write",
+        "command": "if echo \"${TOOL_INPUT_PATH:-}\" | grep -Eq '\\.(ts|tsx|js|jsx)$'; then if grep -n 'console\\.log' \"${TOOL_INPUT_PATH}\" 2>/dev/null; then echo '[Compat] console.log detected; replace with project logger when possible.' >&2; fi; fi || true"
+      },
+      {
+        "matcher": "Write",
+        "command": "if echo \"${TOOL_INPUT_PATH:-}\" | grep -Eq '^src/(api|types)/.*\\.ts$'; then echo '[Compat] API/type changed. Consider /sync to update specs/docs.' >&2; fi"
+      },
+      {
+        "matcher": "Write",
+        "command": "if echo \"${TOOL_INPUT_PATH:-}\" | grep -Eqi '(auth|payment|admin|security)'; then echo '[Compat] Sensitive area touched. Consider /review --security-only.' >&2; fi"
+      }
+    ],
+    "beforeSubmitPrompt": [],
+    "stop": []
+  }
+}

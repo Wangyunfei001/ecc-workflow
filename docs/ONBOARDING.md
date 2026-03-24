@@ -79,8 +79,8 @@ AI会开始追问:
 **输出**: `docs/requirements/2026-02-03-user-registration.md`
 
 **Gate 1检查**: 
-1. 打开需求文档
-2. 确认追问清单完成
+1. 运行 `node .cursor/scripts/gate-check.mjs docs/requirements/2026-02-03-user-registration.md` 验证完整度
+2. 打开需求文档确认追问清单完成
 3. 将`status: clarified`改为`status: approved`
 
 #### Phase 2: 任务规划(5分钟)
@@ -97,7 +97,9 @@ AI会:
 
 **输出**: `docs/plans/2026-02-03-user-registration.md`
 
-**Gate 2检查**: 确认任务合理后,改为`status: approved`
+**Gate 2检查**: 
+1. 运行 `node .cursor/scripts/gate-check.mjs docs/plans/2026-02-03-user-registration.md`
+2. 确认任务合理后,改为`status: approved`
 
 #### Phase 3: 架构设计(5分钟)
 
@@ -117,7 +119,9 @@ AI会:
 - `docs/architecture/user-registration.md`
 - `docs/adrs/ADR-001-auth-strategy.md`
 
-**Gate 3检查**: 确认架构合理后,改为`status: approved`
+**Gate 3检查**: 
+1. 运行 `node .cursor/scripts/gate-check.mjs docs/architecture/user-registration.md`
+2. 确认架构合理后,改为`status: approved`
 
 #### Phase 4: 规格撰写(10分钟)
 
@@ -137,10 +141,11 @@ AI会生成详细的技术规格,包括:
 **输出**: `docs/specs/features/user-registration.md`
 
 **Gate 4检查**: 
-1. 确认数据模型精确(字段类型、约束)
-2. 确认API完整(路径、参数、响应)
-3. 确认错误处理覆盖
-4. 改为`status: approved`
+1. 运行 `node .cursor/scripts/gate-check.mjs docs/specs/features/user-registration.md`
+2. 确认数据模型精确(字段类型、约束)
+3. 确认API完整(路径、参数、响应)
+4. 确认错误处理覆盖
+5. 改为`status: approved`
 
 #### Phase 5: 代码实现(5分钟)
 
@@ -266,6 +271,10 @@ Instinct是系统从你的编码习惯中学到的**原子化模式**:
 ### Git工作流
 
 ```bash
+# 建议配置 git pre-commit hook 进行 Spec 与代码的自动一致性校验
+# 在 .git/hooks/pre-commit 中添加:
+# node .cursor/scripts/check-spec-code-alignment.mjs --staged
+
 # 提交Spec和需求文档
 git add docs/
 git commit -m "docs: 添加用户注册需求和规格"

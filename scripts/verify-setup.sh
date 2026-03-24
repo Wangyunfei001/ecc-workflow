@@ -5,6 +5,11 @@
 #   --mode core      仅验证官方核心能力
 #   --mode learning  验证核心 + continuous-learning 增强层
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if command -v node >/dev/null 2>&1 && [ -f "$SCRIPT_DIR/verify-setup.mjs" ]; then
+    exec node "$SCRIPT_DIR/verify-setup.mjs" "$@"
+fi
+
 set -euo pipefail
 
 MODE="core"
@@ -176,7 +181,7 @@ if [ -f "$PROJECT_CURSOR_DIR/hooks.json" ]; then
         fi
 
         if [ "$MODE" = "learning" ]; then
-            if jq -e '.hooks.preToolUse[]?.command | strings | contains("observe.sh")' "$PROJECT_CURSOR_DIR/hooks.json" >/dev/null 2>&1; then
+            if jq -e '.hooks.preToolUse[]?.command | strings | contains("observe.mjs") or contains("observe.sh")' "$PROJECT_CURSOR_DIR/hooks.json" >/dev/null 2>&1; then
                 info "learning hook 已合并到 preToolUse"
             else
                 warn "learning hook 可能未合并到 preToolUse"
@@ -194,25 +199,19 @@ if [ "$MODE" = "learning" ]; then
     check_dir "$HOMUNCULUS_DIR/instincts/personal" "warn" "instincts/personal"
     check_dir "$HOMUNCULUS_DIR/instincts/inherited" "warn" "instincts/inherited"
     check_file "$HOMUNCULUS_DIR/observations.jsonl" "warn" "observations.jsonl"
-    check_file "$USER_CURSOR_DIR/hooks/observe.sh" "warn" "observe.sh"
-    if [ -f "$USER_CURSOR_DIR/hooks/observe.sh" ]; then
-        if [ -x "$USER_CURSOR_DIR/hooks/observe.sh" ]; then
-            info "observe.sh 可执行"
+    check_file "$USER_CURSOR_DIR/hooks/observe.mjs" "warn" "observe.mjs"
+    if [ -f "$USER_CURSOR_DIR/hooks/observe.mjs" ]; then
+        if command -v node >/dev/null 2>&1; then
+            info "node 可执行"
         else
-            warn "observe.sh 不可执行"
+            warn "node 不可执行，observe.mjs 需要 node 运行时"
         fi
 
-        # 能力探针: 验证 observe.sh 是否包含 stdin 优先 + input_raw 记录能力
-        if grep -Eq "STDIN_PAYLOAD|input_raw|tool_name|tool_input|tool_output" "$USER_CURSOR_DIR/hooks/observe.sh" >/dev/null 2>&1; then
-            info "observe.sh 能力探针通过（stdin/input_raw/tool fields）"
+        # 能力探针: 验证 observe.mjs 是否包含 stdin 优先 + input_raw 记录能力
+        if grep -Eq "process.stdin|input_raw|tool_name|tool_input|tool_output" "$USER_CURSOR_DIR/hooks/observe.mjs" >/dev/null 2>&1; then
+            info "observe.mjs 能力探针通过（stdin/input_raw/tool fields）"
         else
-            warn "observe.sh 可能为旧版本（缺少 stdin/input_raw/tool 字段解析）"
-        fi
-
-        if grep -Eq "TodoWrite|todos" "$USER_CURSOR_DIR/hooks/observe.sh" >/dev/null 2>&1; then
-            info "observe.sh 包含 TodoWrite/todos 显式处理能力"
-        else
-            warn "observe.sh 未显式声明 TodoWrite/todos 处理（通用 tool 记录仍可工作）"
+            warn "observe.mjs 可能为旧版本（缺少 stdin/input_raw/tool 字段解析）"
         fi
     fi
 

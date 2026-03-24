@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "matcher": "Write",
+        "command": "if echo \"${TOOL_INPUT_PATH:-}\" | grep -Eq '\\.(ts|tsx|js|jsx)$'; then echo 'Ensure changed code still matches the approved spec.' >&2; fi"
+      },
+      {
+        "matcher": "Shell",
+        "command": "if echo \"${TOOL_INPUT_COMMAND:-}\" | grep -Eq '^git push'; then echo 'About to push changes. Confirm review and tests are complete.' >&2; fi"
+      },
+      {
+        "matcher": "Shell",
+        "command": "if echo \"${TOOL_INPUT_COMMAND:-}\" | grep -Eq '^git push.*(main|master)( |$)'; then echo 'Direct pushes to main/master are blocked. Use a PR flow.' >&2; exit 2; fi"
+      },
+      {
+        "matcher": "Shell",
+        "command": "if echo \"${TOOL_INPUT_COMMAND:-}\" | grep -Eq '^(npm|pnpm|yarn|cargo|pytest|jest)'; then if [ -z \"$TMUX\" ]; then echo '[Compat] Recommend tmux for long-running command resilience.' >&2; fi; fi"
+      },
+      {
+        "matcher": "*",
+        "command": "if command -v node >/dev/null 2>&1 && [ -f \"$HOME/.cursor/hooks/observe.mjs\" ]; then node \"$HOME/.cursor/hooks/observe.mjs\" pre || true; elif [ -x \"$HOME/.cursor/hooks/observe.sh\" ]; then \"$HOME/.cursor/hooks/observe.sh\" pre || true; fi"
+      }
+    ],
+    "postToolUse": [
+      {
+        "matcher": "Write",
+        "command": "if echo \"${TOOL_INPUT_PATH:-}\" | grep -Eq '\\.tsx?$'; then npx tsc --noEmit --pretty 2>&1 | head -20 || true; fi"
+      },
+      {
+        "matcher": "Write",
+        "command": "if echo \"${TOOL_INPUT_PATH:-}\" | grep -Eq '\\.(ts|tsx|js|jsx|css|json)$'; then npx prettier --write \"${TOOL_INPUT_PATH}\" 2>/dev/null || true; fi"
+      },
+      {
+        "matcher": "Write",
+        "command": "if echo \"${TOOL_INPUT_PATH:-}\" | grep -Eq '\\.(ts|tsx|js|jsx)$'; then if grep -n 'console\\.log' \"${TOOL_INPUT_PATH}\" 2>/dev/null; then echo '[Compat] console.log detected; replace with project logger when possible.' >&2; fi; fi || true"
+      },
+      {
+        "matcher": "Write",
+        "command": "if echo \"${TOOL_INPUT_PATH:-}\" | grep -Eq '^src/(api|types)/.*\\.ts$'; then echo '[Compat] API/type changed. Consider /sync to update specs/docs.' >&2; fi"
+      },
+      {
+        "matcher": "Write",
+        "command": "if echo \"${TOOL_INPUT_PATH:-}\" | grep -Eqi '(auth|payment|admin|security)'; then echo '[Compat] Sensitive area touched. Consider /review --security-only.' >&2; fi"
+      },
+      {
+        "matcher": "*",
+        "command": "if command -v node >/dev/null 2>&1 && [ -f \"$HOME/.cursor/hooks/observe.mjs\" ]; then node \"$HOME/.cursor/hooks/observe.mjs\" post || true; elif [ -x \"$HOME/.cursor/hooks/observe.sh\" ]; then \"$HOME/.cursor/hooks/observe.sh\" post || true; fi"
+      }
+    ],
+    "beforeSubmitPrompt": [
+      {
+        "command": "if echo \"${USER_PROMPT:-}\" | grep -Eqi '(报错|bug|错误|异常|TypeError|Error:)'; then echo 'Bug-like prompt detected. Consider using @bug-hunter for structured diagnosis.' >&2; fi"
+      }
+    ],
+    "stop": [
+      {
+        "command": "echo 'Changed files in current session:' && git diff --name-only 2>/dev/null | head -10 || true"
+      },
+      {
+        "command": "if git diff --name-only 2>/dev/null | grep -q 'src/'; then echo 'Code changed. Consider running /sync to keep docs aligned.' >&2; fi || true"
+      },
+      {
+        "command": "if command -v node >/dev/null 2>&1 && [ -f \"$HOME/.cursor/hooks/batch-observations.mjs\" ]; then node \"$HOME/.cursor/hooks/batch-observations.mjs\" || true; fi"
+      },
+      {
+        "command": "if command -v node >/dev/null 2>&1 && [ -f \"$HOME/.cursor/hooks/instinct-decay.mjs\" ]; then node \"$HOME/.cursor/hooks/instinct-decay.mjs\" || true; fi"
+      }
+    ]
+  }
+}

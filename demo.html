@@ -1,0 +1,1497 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECC Workflow — 规范驱动开发工作流</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #12121a;
+  --bg-card: #1a1a2e;
+  --bg-card-hover: #222240;
+  --text-primary: #e8e6e3;
+  --text-secondary: #8a8a9a;
+  --text-muted: #55556a;
+  --accent-blue: #4f7cff;
+  --accent-purple: #9b59ff;
+  --accent-teal: #00d4aa;
+  --accent-orange: #ff8c42;
+  --accent-pink: #ff5a8a;
+  --accent-gold: #ffd700;
+  --phase1: #ff6b6b;
+  --phase2: #ffa94d;
+  --phase3: #69db7c;
+  --phase4: #4dabf7;
+  --phase5: #cc5de8;
+  --gate: #ffd43b;
+  --border: rgba(255,255,255,0.06);
+  --glow-blue: 0 0 40px rgba(79,124,255,0.15);
+  --glow-purple: 0 0 40px rgba(155,89,255,0.15);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Noto Sans SC', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+code, .mono { font-family: 'JetBrains Mono', monospace; }
+
+::selection { background: var(--accent-purple); color: #fff; }
+
+/* ─── Noise texture overlay ─── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 9999;
+}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--accent-purple); border-radius: 3px; }
+
+/* ─── Layout ─── */
+.container { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+section { padding: 100px 0; position: relative; }
+
+/* ─── Hero ─── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-bg {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(79,124,255,0.15), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(155,89,255,0.1), transparent),
+    radial-gradient(ellipse 50% 30% at 20% 60%, rgba(0,212,170,0.08), transparent);
+}
+
+.hero-content { position: relative; z-index: 1; }
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 18px;
+  border-radius: 100px;
+  background: rgba(79,124,255,0.1);
+  border: 1px solid rgba(79,124,255,0.25);
+  color: var(--accent-blue);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  margin-bottom: 32px;
+  animation: fadeInUp 0.8s ease;
+}
+
+.hero-badge::before {
+  content: '';
+  width: 6px; height: 6px;
+  background: var(--accent-teal);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(48px, 8vw, 96px);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -2px;
+  margin-bottom: 24px;
+  animation: fadeInUp 0.8s ease 0.1s both;
+}
+
+.hero h1 .gradient-text {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple), var(--accent-teal));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-subtitle {
+  font-size: clamp(16px, 2vw, 22px);
+  color: var(--text-secondary);
+  max-width: 600px;
+  margin: 0 auto 48px;
+  font-weight: 300;
+  animation: fadeInUp 0.8s ease 0.2s both;
+}
+
+.hero-stats {
+  display: flex;
+  gap: 48px;
+  justify-content: center;
+  flex-wrap: wrap;
+  animation: fadeInUp 0.8s ease 0.3s both;
+}
+
+.hero-stat { text-align: center; }
+
+.hero-stat-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 42px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-stat-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-top: 4px;
+}
+
+/* ─── Section Headers ─── */
+.section-header { text-align: center; margin-bottom: 64px; }
+
+.section-tag {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: var(--accent-teal);
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 700;
+  letter-spacing: -1px;
+  margin-bottom: 16px;
+}
+
+.section-desc {
+  font-size: 17px;
+  color: var(--text-secondary);
+  max-width: 560px;
+  margin: 0 auto;
+  font-weight: 300;
+}
+
+/* ─── Pipeline Section ─── */
+.pipeline-section { background: var(--bg-secondary); }
+
+.pipeline-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.pipeline-line {
+  position: absolute;
+  left: 40px;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(to bottom,
+    var(--phase1), var(--phase2), var(--phase3), var(--phase4), var(--phase5));
+  border-radius: 2px;
+  opacity: 0.4;
+}
+
+.pipeline-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 32px;
+  padding: 32px 0;
+  position: relative;
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pipeline-item.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.pipeline-node {
+  width: 80px;
+  min-width: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  z-index: 2;
+}
+
+.pipeline-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--bg-primary);
+  box-shadow: 0 0 20px rgba(0,0,0,0.3);
+  transition: transform 0.3s ease;
+}
+
+.pipeline-item:hover .pipeline-dot { transform: scale(1.2); }
+
+.pipeline-phase-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+.pipeline-card {
+  flex: 1;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 28px 32px;
+  border: 1px solid var(--border);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.pipeline-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.pipeline-card:hover {
+  background: var(--bg-card-hover);
+  border-color: rgba(255,255,255,0.1);
+  transform: translateY(-2px);
+  box-shadow: var(--glow-blue);
+}
+
+.pipeline-card h3 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pipeline-card p {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.pipeline-card .tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text-secondary);
+}
+
+.tag.agent { color: var(--accent-purple); border-color: rgba(155,89,255,0.2); background: rgba(155,89,255,0.06); }
+.tag.cmd { color: var(--accent-blue); border-color: rgba(79,124,255,0.2); background: rgba(79,124,255,0.06); }
+.tag.output { color: var(--accent-teal); border-color: rgba(0,212,170,0.2); background: rgba(0,212,170,0.06); }
+
+/* Gate markers */
+.gate-marker {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0 12px 20px;
+  position: relative;
+  z-index: 2;
+}
+
+.gate-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,212,59,0.1);
+  border: 2px dashed var(--gate);
+  border-radius: 50%;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.gate-text {
+  font-size: 13px;
+  color: var(--gate);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.gate-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+
+/* ─── Agents Grid ─── */
+.agents-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.agent-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  padding: 24px;
+  border: 1px solid var(--border);
+  transition: all 0.3s ease;
+  cursor: default;
+  position: relative;
+  overflow: hidden;
+}
+
+.agent-card:hover {
+  border-color: rgba(155,89,255,0.3);
+  transform: translateY(-3px);
+  box-shadow: var(--glow-purple);
+}
+
+.agent-card .agent-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  margin-bottom: 14px;
+}
+
+.agent-card h4 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.agent-card .mono {
+  font-size: 12px;
+  color: var(--accent-purple);
+  margin-bottom: 8px;
+  display: block;
+}
+
+.agent-card p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.agent-card .phase-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+/* ─── Demo Terminal ─── */
+.demo-section { background: var(--bg-secondary); }
+
+.demo-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+.demo-terminal {
+  background: #0d1117;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+}
+
+.demo-terminal-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.demo-terminal-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.demo-terminal-title {
+  flex: 1;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.demo-terminal-body {
+  padding: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.8;
+  min-height: 400px;
+  position: relative;
+}
+
+.demo-terminal-body .line {
+  opacity: 0;
+  transform: translateY(5px);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.demo-terminal-body .line.visible {
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 0.3s ease;
+}
+
+.line .prompt { color: var(--accent-teal); }
+.line .cmd { color: var(--accent-blue); }
+.line .comment { color: var(--text-muted); font-style: italic; }
+.line .output { color: var(--text-secondary); }
+.line .success { color: var(--accent-teal); }
+.line .warn { color: var(--accent-orange); }
+.line .file { color: var(--accent-purple); }
+.line .phase-tag { color: var(--accent-pink); font-weight: 600; }
+
+.cursor-blink {
+  display: inline-block;
+  width: 8px;
+  height: 16px;
+  background: var(--accent-teal);
+  animation: blink 1s step-end infinite;
+  vertical-align: text-bottom;
+}
+
+.demo-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.demo-step {
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  padding: 20px 24px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.demo-step::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  transition: background 0.3s ease;
+}
+
+.demo-step.active {
+  border-color: rgba(79,124,255,0.3);
+  background: var(--bg-card-hover);
+}
+
+.demo-step.active::before { background: var(--accent-blue); }
+
+.demo-step .step-num {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 6px;
+}
+
+.demo-step h4 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.demo-step p {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* ─── Architecture Section ─── */
+.arch-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.arch-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 32px;
+  border: 1px solid var(--border);
+  transition: all 0.3s ease;
+}
+
+.arch-card:hover {
+  border-color: rgba(0,212,170,0.3);
+  box-shadow: 0 0 40px rgba(0,212,170,0.08);
+}
+
+.arch-card.full-width { grid-column: 1 / -1; }
+
+.arch-card .card-icon {
+  font-size: 28px;
+  margin-bottom: 16px;
+}
+
+.arch-card h3 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.arch-card p {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.arch-diagram {
+  background: rgba(0,0,0,0.3);
+  border-radius: var(--radius-sm);
+  padding: 24px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.arch-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.arch-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.arch-list li::before {
+  content: '▸';
+  color: var(--accent-teal);
+  font-weight: bold;
+}
+
+/* ─── Commands Section ─── */
+.commands-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.command-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  transition: all 0.3s ease;
+}
+
+.command-item:hover {
+  border-color: rgba(79,124,255,0.3);
+  background: var(--bg-card-hover);
+}
+
+.command-item code {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-blue);
+  white-space: nowrap;
+}
+
+.command-item span {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.command-category {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text-muted);
+  margin: 32px 0 16px;
+}
+
+.command-category:first-child { margin-top: 0; }
+
+/* ─── Learning Section ─── */
+.learning-flow {
+  display: flex;
+  gap: 24px;
+  overflow-x: auto;
+  padding-bottom: 16px;
+}
+
+.learning-card {
+  flex: 1;
+  min-width: 260px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 28px;
+  border: 1px solid var(--border);
+  position: relative;
+}
+
+.learning-card::after {
+  content: '→';
+  position: absolute;
+  right: -18px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  color: var(--text-muted);
+}
+
+.learning-card:last-child::after { display: none; }
+
+.learning-card .lc-icon {
+  font-size: 28px;
+  margin-bottom: 12px;
+}
+
+.learning-card h4 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.learning-card p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ─── Footer ─── */
+footer {
+  padding: 48px 0;
+  text-align: center;
+  border-top: 1px solid var(--border);
+}
+
+footer p {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+footer a {
+  color: var(--accent-blue);
+  text-decoration: none;
+}
+
+/* ─── Animations ─── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+  .container { padding: 0 20px; }
+  section { padding: 64px 0; }
+  .demo-container { grid-template-columns: 1fr; }
+  .arch-grid { grid-template-columns: 1fr; }
+  .pipeline-line { left: 28px; }
+  .pipeline-node { width: 56px; min-width: 56px; }
+  .pipeline-card { padding: 20px; }
+  .hero-stats { gap: 28px; }
+  .learning-flow { flex-direction: column; }
+  .learning-card::after { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ════════ HERO ════════ -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <div class="hero-badge">Cursor Plugin · v1.1.0</div>
+    <h1>
+      <span class="gradient-text">ECC</span> Workflow
+    </h1>
+    <p class="hero-subtitle">
+      面向 Cursor 的规范驱动开发工作流 — 将"对话式编码"升级为"流水线式工程"，内置持续学习机制
+    </p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-value">5</div>
+        <div class="hero-stat-label">开发阶段</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">10</div>
+        <div class="hero-stat-label">专业 Agent</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">11</div>
+        <div class="hero-stat-label">斜杠命令</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">3</div>
+        <div class="hero-stat-label">质量守护 Agent</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">∞</div>
+        <div class="hero-stat-label">持续学习</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ PIPELINE ════════ -->
+<section class="pipeline-section">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-tag">Core Workflow</div>
+      <h2 class="section-title">5 阶段门禁流程</h2>
+      <p class="section-desc">Code Before Coding — 在编码之前先设计，每个阶段都有强制人工审查点</p>
+    </div>
+
+    <div class="pipeline-wrapper">
+      <div class="pipeline-line"></div>
+
+      <!-- Phase 1 -->
+      <div class="pipeline-item" data-phase="1">
+        <div class="pipeline-node">
+          <div class="pipeline-dot" style="background: var(--phase1)">1</div>
+          <div class="pipeline-phase-label" style="color: var(--phase1)">Phase 1</div>
+        </div>
+        <div class="pipeline-card" style="--card-color: var(--phase1)">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--phase1);border-radius:var(--radius) var(--radius) 0 0"></div>
+          <h3>需求分析</h3>
+          <p>通过系统化追问机制，消除需求中的模糊性，确保完整理解用户的真实诉求。不假设、不确定就问。</p>
+          <div class="tags">
+            <span class="tag agent">@requirement-analyst</span>
+            <span class="tag cmd">/analyze</span>
+            <span class="tag output">→ 需求文档</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="gate-marker">
+        <div class="gate-icon">🚧</div>
+        <div><span class="gate-text">Gate 1</span><span class="gate-desc"> — 需求文档人工审查</span></div>
+      </div>
+
+      <!-- Phase 2 -->
+      <div class="pipeline-item" data-phase="2">
+        <div class="pipeline-node">
+          <div class="pipeline-dot" style="background: var(--phase2)">2</div>
+          <div class="pipeline-phase-label" style="color: var(--phase2)">Phase 2</div>
+        </div>
+        <div class="pipeline-card">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--phase2);border-radius:var(--radius) var(--radius) 0 0"></div>
+          <h3>任务规划</h3>
+          <p>将已批准的需求拆解为可执行的任务序列，定义每个任务的依赖、优先级和验收标准。</p>
+          <div class="tags">
+            <span class="tag agent">@planner</span>
+            <span class="tag output">→ 实施计划</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="gate-marker">
+        <div class="gate-icon">🚧</div>
+        <div><span class="gate-text">Gate 2</span><span class="gate-desc"> — 实施计划人工审查</span></div>
+      </div>
+
+      <!-- Phase 3 -->
+      <div class="pipeline-item" data-phase="3">
+        <div class="pipeline-node">
+          <div class="pipeline-dot" style="background: var(--phase3)">3</div>
+          <div class="pipeline-phase-label" style="color: var(--phase3)">Phase 3</div>
+        </div>
+        <div class="pipeline-card">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--phase3);border-radius:var(--radius) var(--radius) 0 0"></div>
+          <h3>架构设计</h3>
+          <p>进行多方案技术对比，做出关键架构决策并记录 ADR，确保方案的合理性与可扩展性。</p>
+          <div class="tags">
+            <span class="tag agent">@architect</span>
+            <span class="tag output">→ 架构方案 + ADR</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="gate-marker">
+        <div class="gate-icon">🚧</div>
+        <div><span class="gate-text">Gate 3</span><span class="gate-desc"> — 架构方案人工审查</span></div>
+      </div>
+
+      <!-- Phase 4 -->
+      <div class="pipeline-item" data-phase="4">
+        <div class="pipeline-node">
+          <div class="pipeline-dot" style="background: var(--phase4)">4</div>
+          <div class="pipeline-phase-label" style="color: var(--phase4)">Phase 4</div>
+        </div>
+        <div class="pipeline-card">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--phase4);border-radius:var(--radius) var(--radius) 0 0"></div>
+          <h3>规格撰写</h3>
+          <p>生成精确到接口、数据模型、边界情况的可实施级技术规格文档，作为代码实现的"法律"。</p>
+          <div class="tags">
+            <span class="tag agent">@spec-writer</span>
+            <span class="tag cmd">/spec</span>
+            <span class="tag output">→ Spec 文档</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="gate-marker">
+        <div class="gate-icon">🚧</div>
+        <div><span class="gate-text">Gate 4</span><span class="gate-desc"> — Spec 文档人工审查</span></div>
+      </div>
+
+      <!-- Phase 5 -->
+      <div class="pipeline-item" data-phase="5">
+        <div class="pipeline-node">
+          <div class="pipeline-dot" style="background: var(--phase5)">5</div>
+          <div class="pipeline-phase-label" style="color: var(--phase5)">Phase 5</div>
+        </div>
+        <div class="pipeline-card">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--phase5);border-radius:var(--radius) var(--radius) 0 0"></div>
+          <h3>代码实现</h3>
+          <p>严格按照已批准的 Spec 进行编码实现，禁止自由发挥——遇到 Spec 缺失立即询问而非猜测。</p>
+          <div class="tags">
+            <span class="tag agent">@strict-coder</span>
+            <span class="tag cmd">/implement</span>
+            <span class="tag cmd">/review</span>
+            <span class="tag cmd">/sync</span>
+            <span class="tag output">→ 可交付代码</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ AGENTS ════════ -->
+<section>
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-tag">Specialist Agents</div>
+      <h2 class="section-title">10 个专业化 Agent</h2>
+      <p class="section-desc">每个 Agent 只做一件事并做到极致，通过文档通信实现完全解耦</p>
+    </div>
+
+    <div class="agents-grid">
+      <div class="agent-card reveal">
+        <div class="agent-icon" style="background:rgba(255,107,107,0.12)">🔍</div>
+        <span class="phase-badge" style="background:rgba(255,107,107,0.15);color:var(--phase1)">P1</span>
+        <span class="mono">requirement-analyst</span>
+        <h4>需求分析专家</h4>
+        <p>系统化追问，消除需求模糊性，5 大类追问清单确保理解完整</p>
+      </div>
+
+      <div class="agent-card reveal">
+        <div class="agent-icon" style="background:rgba(255,169,77,0.12)">📋</div>
+        <span class="phase-badge" style="background:rgba(255,169,77,0.15);color:var(--phase2)">P2</span>
+        <span class="mono">planner</span>
+        <h4>任务规划专家</h4>
+        <p>将需求拆解为可执行任务序列，定义依赖与优先级</p>
+      </div>
+
+      <div class="agent-card reveal">
+        <div class="agent-icon" style="background:rgba(105,219,124,0.12)">🏗️</div>
+        <span class="phase-badge" style="background:rgba(105,219,124,0.15);color:var(--phase3)">P3</span>
+        <span class="mono">architect</span>
+        <h4>架构设计专家</h4>
+        <p>多方案对比、技术选型、架构决策记录（ADR）</p>
+      </div>
+
+      <div class="agent-card reveal">
+        <div class="agent-icon" style="background:rgba(77,171,247,0.12)">📝</div>
+        <span class="phase-badge" style="background:rgba(77,171,247,0.15);color:var(--phase4)">P4</span>
+        <span class="mono">spec-writer</span>
+        <h4>规格撰写专家</h4>
+        <p>生成精确到接口的可实施级 Spec，覆盖边界情况</p>
+      </div>
+
+      <div class="agent-card reveal">
+        <div class="agent-icon" style="background:rgba(204,93,232,0.12)">⚡</div>
+        <span class="phase-badge" style="background:rgba(204,93,232,0.15);color:var(--phase5)">P5</span>
+        <span class="mono">strict-coder</span>
+        <h4>严格实现专家</h4>
+        <p>100% 按 Spec 实现，禁止自由发挥，Spec 即法律</p>
+      </div>
+
+      <div class="agent-card reveal">
+        <div class="agent-icon" style="background:rgba(79,124,255,0.12)">🔎</div>
+        <span class="mono">code-reviewer</span>
+        <h4>代码审查专家</h4>
+        <p>多维度代码质量审查，涵盖可读性、性能、安全</p>
+      </div>
+
+      <div class="agent-card reveal">
+        <div class="agent-icon" style="background:rgba(255,90,138,0.12)">🛡️</div>
+        <span class="phase-badge" style="background:rgba(255,90,138,0.15);color:var(--accent-pink)">质量守护</span>
+        <span class="mono">security-reviewer</span>
+        <h4>安全审查专家</h4>
+        <p>认证、支付、权限等敏感场景自动触发安全审查，与 code-reviewer 并行执行</p>
+      </div>
+
+      <div class="agent-card reveal">
+        <div class="agent-icon" style="background:rgba(0,212,170,0.12)">🧪</div>
+        <span class="phase-badge" style="background:rgba(0,212,170,0.15);color:var(--accent-teal)">质量守护</span>
+        <span class="mono">tdd-guide</span>
+        <h4>TDD 引导专家</h4>
+        <p>引导测试驱动开发，RED→GREEN→REFACTOR 循环，Bug 修复时先写回归测试</p>
+      </div>
+
+      <div class="agent-card reveal">
+        <div class="agent-icon" style="background:rgba(255,215,0,0.12)">📚</div>
+        <span class="phase-badge" style="background:rgba(255,215,0,0.15);color:var(--accent-gold)">质量守护</span>
+        <span class="mono">librarian</span>
+        <h4>文档同步专家</h4>
+        <p>代码变更后自动同步更新相关文档，反向同步 Spec 与实现差异，防止系统熵增</p>
+      </div>
+
+      <div class="agent-card reveal">
+        <div class="agent-icon" style="background:rgba(255,140,66,0.12)">🐛</div>
+        <span class="mono">bug-hunter</span>
+        <h4>故障排查专家</h4>
+        <p>系统化定位问题根因，提供修复方案与回归测试建议</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ DEMO ════════ -->
+<section class="demo-section">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-tag">Live Demo</div>
+      <h2 class="section-title">效果演示</h2>
+      <p class="section-desc">点击右侧步骤，观看完整工作流在 Cursor 中的运行效果 · 包含 3 个质量守护 Agent 的实际应用</p>
+    </div>
+
+    <div class="demo-container reveal">
+      <div class="demo-terminal">
+        <div class="demo-terminal-bar">
+          <div class="demo-terminal-dot" style="background:#ff5f57"></div>
+          <div class="demo-terminal-dot" style="background:#febc2e"></div>
+          <div class="demo-terminal-dot" style="background:#28c840"></div>
+          <div class="demo-terminal-title">Cursor Chat — ECC Workflow</div>
+        </div>
+        <div class="demo-terminal-body" id="terminal-body">
+        </div>
+      </div>
+
+      <div class="demo-sidebar">
+        <div class="demo-step active" data-step="0" onclick="playStep(0)">
+          <div class="step-num" style="color:var(--phase1)">Step 1</div>
+          <h4>需求分析</h4>
+          <p>运行 /analyze 命令，Agent 自动追问澄清需求</p>
+        </div>
+        <div class="demo-step" data-step="1" onclick="playStep(1)">
+          <div class="step-num" style="color:var(--phase2)">Step 2</div>
+          <h4>任务规划</h4>
+          <p>使用 @planner 将需求拆解为可执行任务</p>
+        </div>
+        <div class="demo-step" data-step="2" onclick="playStep(2)">
+          <div class="step-num" style="color:var(--phase4)">Step 3</div>
+          <h4>规格撰写</h4>
+          <p>运行 /spec 生成可实施级技术规格</p>
+        </div>
+        <div class="demo-step" data-step="3" onclick="playStep(3)">
+          <div class="step-num" style="color:var(--phase5)">Step 4</div>
+          <h4>代码实现</h4>
+          <p>运行 /implement 严格按照 Spec 实现</p>
+        </div>
+        <div class="demo-step" data-step="4" onclick="playStep(4)">
+          <div class="step-num" style="color:var(--accent-pink)">Step 5</div>
+          <h4>安全 & 质量审查</h4>
+          <p>🛡️ security-reviewer + 🔎 code-reviewer 并行审查</p>
+        </div>
+        <div class="demo-step" data-step="5" onclick="playStep(5)">
+          <div class="step-num" style="color:var(--accent-gold)">Step 6</div>
+          <h4>文档同步</h4>
+          <p>📚 librarian 自动同步 Spec 与代码差异</p>
+        </div>
+        <div class="demo-step" data-step="6" onclick="playStep(6)">
+          <div class="step-num" style="color:var(--accent-orange)">Step 7</div>
+          <h4>Bug 修复 + TDD</h4>
+          <p>🧪 tdd-guide 引导测试先行修复流程</p>
+        </div>
+        <div class="demo-step" data-step="7" onclick="playStep(7)">
+          <div class="step-num" style="color:var(--accent-teal)">Step 8</div>
+          <h4>持续学习</h4>
+          <p>运行 /learn-project 和 /evolve 提升长期质量</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ ARCHITECTURE ════════ -->
+<section>
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-tag">Architecture</div>
+      <h2 class="section-title">核心架构</h2>
+      <p class="section-desc">文档驱动、双层记忆、持续演化</p>
+    </div>
+
+    <div class="arch-grid">
+      <div class="arch-card reveal">
+        <div class="card-icon">🗂️</div>
+        <h3>项目级记忆</h3>
+        <p>功能设计是团队共享的，通过 Git 版本化管理</p>
+        <ul class="arch-list">
+          <li>需求文档 · docs/requirements/</li>
+          <li>实施计划 · docs/plans/</li>
+          <li>架构方案 · docs/architecture/</li>
+          <li>技术规格 · docs/specs/</li>
+          <li>代码地图 · docs/CODEMAPS/</li>
+        </ul>
+      </div>
+
+      <div class="arch-card reveal">
+        <div class="card-icon">🧠</div>
+        <h3>用户级记忆</h3>
+        <p>个人编码习惯是私有的，仅存储在本地</p>
+        <ul class="arch-list">
+          <li>观察日志 · observations.jsonl</li>
+          <li>编码直觉 · instincts/personal/</li>
+          <li>团队继承 · instincts/inherited/</li>
+          <li>演化产物 · evolved/</li>
+        </ul>
+      </div>
+
+      <div class="arch-card full-width reveal">
+        <div class="card-icon">🔄</div>
+        <h3>Agent 通信协议</h3>
+        <p>Agent 之间通过文档通信，不直接交互，确保解耦、可追溯、可审查</p>
+        <div class="arch-diagram">Agent A ──▶ 生成文档 ──▶ 文件系统 ──▶ Agent B 读取 ──▶ Agent B
+
+  ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐
+  │ 需求分析  │ ──▶ │ 任务规划  │ ──▶ │ 架构设计  │ ──▶ │ 规格撰写  │
+  │ analyst  │     │ planner  │     │ architect│     │ spec-wrt │
+  └──────────┘     └──────────┘     └──────────┘     └──────────┘
+       │                │                │                │
+       ▼                ▼                ▼                ▼
+  requirement.md    plan.md        architecture.md    spec.md
+                                                         │
+                                                         ▼
+                                                    ┌──────────┐
+                                                    │ 严格实现  │
+                                                    │  coder   │
+                                                    └──────────┘</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ LEARNING ════════ -->
+<section class="pipeline-section">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-tag">Continuous Learning</div>
+      <h2 class="section-title">持续学习系统</h2>
+      <p class="section-desc">双模学习架构 — 主动学习快速建立认知，被动学习持续积累经验</p>
+    </div>
+
+    <div class="learning-flow reveal">
+      <div class="learning-card">
+        <div class="lc-icon">📡</div>
+        <h4>观察</h4>
+        <p>通过 Hooks 自动记录开发者的每一次工具调用和操作模式</p>
+      </div>
+      <div class="learning-card">
+        <div class="lc-icon">🔬</div>
+        <h4>分析</h4>
+        <p>Observer Agent 批量处理观察数据，识别重复出现的编码模式</p>
+      </div>
+      <div class="learning-card">
+        <div class="lc-icon">💡</div>
+        <h4>生成 Instinct</h4>
+        <p>将高频模式转化为原子化的编码直觉（Instinct），初始置信度 0.5</p>
+      </div>
+      <div class="learning-card">
+        <div class="lc-icon">📈</div>
+        <h4>强化</h4>
+        <p>每次验证成功后提升置信度，失败则降低，自然淘汰不适用的直觉</p>
+      </div>
+      <div class="learning-card">
+        <div class="lc-icon">🧬</div>
+        <h4>演化</h4>
+        <p>高置信度 Instinct 聚类演化为可复用的 Skill、Command 或 Agent</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ COMMANDS ════════ -->
+<section>
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-tag">Commands</div>
+      <h2 class="section-title">11 个斜杠命令</h2>
+      <p class="section-desc">覆盖核心开发流程与持续学习的全部操作</p>
+    </div>
+
+    <div class="reveal">
+      <div class="command-category">核心开发</div>
+      <div class="commands-grid">
+        <div class="command-item"><code>/analyze</code><span>需求分析（Phase 1）</span></div>
+        <div class="command-item"><code>/spec</code><span>生成技术规格（Phase 4）</span></div>
+        <div class="command-item"><code>/implement</code><span>基于 Spec 实现（Phase 5）</span></div>
+        <div class="command-item"><code>/review</code><span>代码审查</span></div>
+        <div class="command-item"><code>/sync</code><span>文档同步</span></div>
+        <div class="command-item"><code>/orchestrate</code><span>完整流程编排</span></div>
+      </div>
+
+      <div class="command-category">持续学习</div>
+      <div class="commands-grid">
+        <div class="command-item"><code>/learn-project</code><span>主动学习项目</span></div>
+        <div class="command-item"><code>/evolve</code><span>演化 Instinct</span></div>
+        <div class="command-item"><code>/instinct-status</code><span>查看 Instinct 状态</span></div>
+        <div class="command-item"><code>/instinct-export</code><span>导出 Instinct</span></div>
+        <div class="command-item"><code>/instinct-import</code><span>导入 Instinct</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ FOOTER ════════ -->
+<footer>
+  <div class="container">
+    <p>
+      ECC Workflow v1.1.0 · MIT License ·
+      <a href="https://github.com/Wangyunfei001/ecc-workflow" target="_blank">GitHub</a>
+    </p>
+  </div>
+</footer>
+
+<script>
+/* ─── Scroll Reveal ─── */
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.reveal, .pipeline-item').forEach(el => observer.observe(el));
+
+/* ─── Demo Terminal ─── */
+const demoScripts = [
+  // Step 0: analyze
+  [
+    { type: 'prompt', text: '> ' },
+    { type: 'cmd', text: '/analyze 开发用户登录功能，支持邮箱和手机号' },
+    { type: 'blank' },
+    { type: 'phase-tag', text: '⬤ Phase 1 · 需求分析' },
+    { type: 'blank' },
+    { type: 'output', text: '🔍 requirement-analyst 已激活' },
+    { type: 'blank' },
+    { type: 'warn', text: '⚠ 检测到 3 个待澄清项：' },
+    { type: 'output', text: '  ① 手机号登录是否需要短信验证码？' },
+    { type: 'output', text: '  ② 是否需要「记住我」功能？' },
+    { type: 'output', text: '  ③ 密码策略：最小长度？是否要求特殊字符？' },
+    { type: 'blank' },
+    { type: 'success', text: '✓ 需求文档已生成：docs/requirements/user-login.md' },
+    { type: 'warn', text: '🚧 Gate 1 · 请审查需求文档后标记 status: approved' },
+  ],
+  // Step 1: planner
+  [
+    { type: 'prompt', text: '> ' },
+    { type: 'cmd', text: '@planner @docs/requirements/user-login.md' },
+    { type: 'blank' },
+    { type: 'phase-tag', text: '⬤ Phase 2 · 任务规划' },
+    { type: 'blank' },
+    { type: 'output', text: '📋 planner 已激活' },
+    { type: 'output', text: '  分析已批准需求...' },
+    { type: 'blank' },
+    { type: 'output', text: '  Task 1: 设计数据模型（User, Session）' },
+    { type: 'output', text: '  Task 2: 实现邮箱登录 API' },
+    { type: 'output', text: '  Task 3: 实现手机号+验证码登录 API' },
+    { type: 'output', text: '  Task 4: 实现「记住我」Token 机制' },
+    { type: 'output', text: '  Task 5: 前端登录页面与表单验证' },
+    { type: 'output', text: '  Task 6: 集成测试与 E2E 测试' },
+    { type: 'blank' },
+    { type: 'success', text: '✓ 实施计划已生成：docs/plans/user-login-plan.md' },
+    { type: 'warn', text: '🚧 Gate 2 · 请审查实施计划后标记 status: approved' },
+  ],
+  // Step 2: spec
+  [
+    { type: 'prompt', text: '> ' },
+    { type: 'cmd', text: '/spec @docs/plans/user-login-plan.md' },
+    { type: 'blank' },
+    { type: 'phase-tag', text: '⬤ Phase 4 · 规格撰写' },
+    { type: 'blank' },
+    { type: 'output', text: '📝 spec-writer 已激活' },
+    { type: 'output', text: '  生成数据模型 Interface...' },
+    { type: 'output', text: '  生成 API 端点规格...' },
+    { type: 'output', text: '    POST /api/auth/login/email' },
+    { type: 'output', text: '    POST /api/auth/login/phone' },
+    { type: 'output', text: '    POST /api/auth/verify-code' },
+    { type: 'output', text: '  生成边界情况清单...' },
+    { type: 'output', text: '  生成安全考虑清单...' },
+    { type: 'blank' },
+    { type: 'success', text: '✓ Spec 已生成：docs/specs/features/user-login-spec.md' },
+    { type: 'warn', text: '🚧 Gate 4 · 请审查 Spec 后标记 status: approved' },
+  ],
+  // Step 3: implement
+  [
+    { type: 'prompt', text: '> ' },
+    { type: 'cmd', text: '/implement @docs/specs/features/user-login-spec.md' },
+    { type: 'blank' },
+    { type: 'phase-tag', text: '⬤ Phase 5 · 代码实现' },
+    { type: 'blank' },
+    { type: 'output', text: '⚡ strict-coder 已激活' },
+    { type: 'output', text: '  严格按照 Spec 实现...' },
+    { type: 'file', text: '  ✎ src/models/user.ts' },
+    { type: 'file', text: '  ✎ src/api/auth/login.ts' },
+    { type: 'file', text: '  ✎ src/api/auth/verify.ts' },
+    { type: 'file', text: '  ✎ src/pages/Login.vue' },
+    { type: 'file', text: '  ✎ tests/auth.test.ts' },
+    { type: 'blank' },
+    { type: 'success', text: '✓ 实现完成 · 5 文件已创建/修改' },
+    { type: 'output', text: '  测试通过: 12/12 (100%)' },
+  ],
+  // Step 4: security + code review (并行)
+  [
+    { type: 'prompt', text: '> ' },
+    { type: 'cmd', text: '/review --parallel' },
+    { type: 'blank' },
+    { type: 'phase-tag', text: '⬤ 并行审查 · TaskGraph 协议' },
+    { type: 'blank' },
+    { type: 'output', text: '▶ 启动并行审查任务...' },
+    { type: 'blank' },
+    { type: 'output', text: '  [Task-4A] 🛡️ security-reviewer' },
+    { type: 'output', text: '    └─ 检测硬编码凭证...' },
+    { type: 'output', text: '    └─ 检测 SQL 注入风险...' },
+    { type: 'output', text: '    └─ 验证密码存储方式...' },
+    { type: 'blank' },
+    { type: 'output', text: '  [Task-4B] 🔎 code-reviewer' },
+    { type: 'output', text: '    └─ 检查函数复杂度...' },
+    { type: 'output', text: '    └─ 检查错误处理...' },
+    { type: 'output', text: '    └─ 检查类型安全...' },
+    { type: 'blank' },
+    { type: 'success', text: '✓ 安全审查通过 · 密码使用 bcrypt，无硬编码凭证' },
+    { type: 'success', text: '✓ 代码审查通过 · 0 error, 1 warning (命名建议)' },
+    { type: 'blank' },
+    { type: 'output', text: '  Merge Strategy: all_must_pass ✓' },
+  ],
+  // Step 5: librarian (文档同步)
+  [
+    { type: 'prompt', text: '> ' },
+    { type: 'cmd', text: '/sync' },
+    { type: 'blank' },
+    { type: 'phase-tag', text: '⬤ 文档同步 · 反向工程' },
+    { type: 'blank' },
+    { type: 'output', text: '📚 librarian 已激活' },
+    { type: 'output', text: '  分析代码变更...' },
+    { type: 'blank' },
+    { type: 'output', text: '  检测到变更:' },
+    { type: 'file', text: '    + src/api/auth/login.ts (新增 2 个端点)' },
+    { type: 'file', text: '    ~ src/models/user.ts (新增 lastLoginAt 字段)' },
+    { type: 'blank' },
+    { type: 'output', text: '  同步到 Spec 文档...' },
+    { type: 'success', text: '    ✓ docs/specs/features/user-login-spec.md 已更新' },
+    { type: 'output', text: '      - 添加 API 端点: POST /api/auth/login/phone' },
+    { type: 'output', text: '      - 更新数据模型: User.lastLoginAt' },
+    { type: 'output', text: '      - 追加变更日志' },
+    { type: 'blank' },
+    { type: 'output', text: '  更新 CODEMAPS...' },
+    { type: 'success', text: '    ✓ docs/CODEMAPS/auth.md 已更新' },
+    { type: 'blank' },
+    { type: 'warn', text: '⚠ 需要人工确认: lastLoginAt 是否应该是必填字段？' },
+  ],
+  // Step 6: bugfix + TDD
+  [
+    { type: 'prompt', text: '> ' },
+    { type: 'cmd', text: '/orchestrate bugfix "用户登录后 session 没有持久化"' },
+    { type: 'blank' },
+    { type: 'phase-tag', text: '⬤ Bug 修复流程 · TDD 驱动' },
+    { type: 'blank' },
+    { type: 'output', text: '🐛 bug-hunter 已激活' },
+    { type: 'output', text: '  分析报错信息...' },
+    { type: 'output', text: '  定位根因: src/api/auth/login.ts:45' },
+    { type: 'output', text: '    await db.session.save() 未被调用' },
+    { type: 'blank' },
+    { type: 'output', text: '🧪 tdd-guide 已激活' },
+    { type: 'blank' },
+    { type: 'warn', text: '  🔴 RED Phase - 先写失败的测试' },
+    { type: 'output', text: '    it("should persist session after login")' },
+    { type: 'output', text: '    运行测试... FAIL ✓ (测试失败，证明 Bug 存在)' },
+    { type: 'blank' },
+    { type: 'success', text: '  🟢 GREEN Phase - 最小修复让测试通过' },
+    { type: 'output', text: '    添加: await db.session.save()' },
+    { type: 'output', text: '    运行测试... PASS ✓' },
+    { type: 'blank' },
+    { type: 'output', text: '  🔄 REFACTOR Phase - 优化代码' },
+    { type: 'output', text: '    提取: createSession() 辅助函数' },
+    { type: 'output', text: '    运行测试... PASS ✓' },
+    { type: 'blank' },
+    { type: 'success', text: '✓ Bug 已修复，回归测试已建立' },
+  ],
+  // Step 7: learn + evolve
+  [
+    { type: 'prompt', text: '> ' },
+    { type: 'cmd', text: '/learn-project --depth=medium' },
+    { type: 'blank' },
+    { type: 'phase-tag', text: '⬤ 持续学习 · 主动模式' },
+    { type: 'blank' },
+    { type: 'output', text: '📡 扫描项目结构...' },
+    { type: 'output', text: '  检测到: Vue 3 + TypeScript + Vite' },
+    { type: 'output', text: '  分析核心模块 (12 个)...' },
+    { type: 'output', text: '  提取 API 规范...' },
+    { type: 'output', text: '  生成编码规范...' },
+    { type: 'blank' },
+    { type: 'success', text: '✓ PROJECT_OVERVIEW.md 已生成' },
+    { type: 'success', text: '✓ ONBOARDING.md 已生成' },
+    { type: 'success', text: '✓ project-standards.md 已注入 Cursor Rules' },
+    { type: 'success', text: '✓ 7 条 Instinct 已生成（置信度 0.5-0.7）' },
+    { type: 'blank' },
+    { type: 'prompt', text: '> ' },
+    { type: 'cmd', text: '/evolve' },
+    { type: 'output', text: '🧬 分析高置信度 Instinct...' },
+    { type: 'success', text: '✓ 2 条 Instinct 已演化为 Skill 模板' },
+  ],
+];
+
+let currentStep = 0;
+
+function playStep(stepIndex) {
+  currentStep = stepIndex;
+  document.querySelectorAll('.demo-step').forEach((el, i) => {
+    el.classList.toggle('active', i === stepIndex);
+  });
+
+  const body = document.getElementById('terminal-body');
+  body.innerHTML = '';
+
+  const lines = demoScripts[stepIndex];
+  lines.forEach((lineData, i) => {
+    const div = document.createElement('div');
+    div.className = 'line';
+
+    if (lineData.type === 'blank') {
+      div.innerHTML = '&nbsp;';
+    } else if (lineData.type === 'prompt') {
+      div.innerHTML = `<span class="prompt">${lineData.text}</span>`;
+    } else {
+      const prevLine = i > 0 ? lines[i-1] : null;
+      if (prevLine && prevLine.type === 'prompt') {
+        const prev = body.lastElementChild;
+        prev.innerHTML += `<span class="${lineData.type}">${lineData.text}</span>`;
+        return;
+      }
+      div.innerHTML = `<span class="${lineData.type}">${lineData.text}</span>`;
+    }
+
+    body.appendChild(div);
+    setTimeout(() => div.classList.add('visible'), 60 * i);
+  });
+
+  const cursorEl = document.createElement('div');
+  cursorEl.className = 'line';
+  cursorEl.style.marginTop = '8px';
+  cursorEl.innerHTML = '<span class="prompt">> </span><span class="cursor-blink"></span>';
+  body.appendChild(cursorEl);
+  setTimeout(() => cursorEl.classList.add('visible'), 60 * lines.length);
+}
+
+playStep(0);
+</script>
+</body>
+</html>

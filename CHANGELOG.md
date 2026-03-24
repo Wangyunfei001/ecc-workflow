@@ -1,5 +1,23 @@
 # 更新日志
 
+## 1.2.0 - 2026-03-23
+
+- **运行时架构升级 (Node First)**：
+  - 核心脚本迁移至 Node.js (ESM)，使用零依赖的 `*.mjs` 替代复杂的 Shell 脚本，避免 `jq` 依赖和跨平台差异。
+  - `install.sh` 与 `verify-setup.sh` 重构为薄分发器，当存在 Node 时调用对应的 `install.mjs` 和 `verify-setup.mjs`。
+- **持续学习层重构**：
+  - 用 `observe.mjs` 替代 `observe.sh` 处理 Hooks 事件。原生支持 stdin JSON 解析和安全的文件写入。
+  - `observe.sh` 现仅作为兼容现有用户的薄包装，向后兼容。
+- **规范驱动工作流 (Spec-driven Workflow) 增强**：
+  - 新增 `scripts/gate-check.mjs`，支持对需求、计划、架构和规格文档进行自动化检查（Gate 1-4），并在 `ONBOARDING.md` 更新工作流。
+  - 新增 `scripts/check-spec-code-alignment.mjs`，作为 Git pre-commit 钩子或提示使用，避免代码偏离 Spec。
+- **上下文管理**：
+  - 正式发布 `/compact` 命令 (`commands/compact.md`) 与配套的快照脚本 `snapshot-context.mjs`。
+  - 引入 Agent 结构化交接协议：新增 `templates/handoff.yml.example`，优化多阶段 Agent 之间的上下文传递。
+- **Instinct 管理**：
+  - 新增 `scripts/instinct-decay.mjs` 周期性降低长时间未被强化的 Instinct 置信度。
+  - 更新 `instinct-import` 策略，增加新人置信度上限与语义冲突指导。
+
 ## 1.1.2 - 2026-03-17
 
 - 修复 `skills/continuous-learning/hooks/observe.sh` 文件权限：从 `644` 改为 `755`（添加可执行位），确保 Cursor hooks 运行时能直接调用。

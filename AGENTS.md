@@ -4,7 +4,8 @@
 
 ### 概述
 
-本仓库为 **ecc-workflow**，一个 Cursor IDE 插件，完全由 Markdown、JSON 和 Bash 文件组成。无包管理器、无构建系统、无运行时服务、无自动化测试套件。
+本仓库为 **ecc-workflow**，一个 Cursor IDE 插件，完全由 Markdown、JSON、Node.js (ESM) 和 Bash 文件组成。无包管理器（零依赖 Node 脚本）、无构建系统、无运行时服务、无自动化测试套件。
+脚本层以 Node.js 为主执行时，Shell 脚本主要作为薄分发器或无 Node 时的向下兼容层。
 
 ### 关键目录
 
@@ -22,6 +23,7 @@
 ### 语法检查 / 验证
 
 无传统 linter。可通过以下方式验证正确性：
+- `node --check scripts/*.mjs` — Node 语法检查
 - `bash -n scripts/install.sh scripts/verify-setup.sh` — Shell 语法检查
 - `jq empty .cursor-plugin/plugin.json hooks/hooks.json hooks/hooks.core.json hooks/hooks.compat.json hooks/hooks.learning.json` — JSON 验证
 - 验证所有 13 个 skills 均有 `SKILL.md`：`for d in skills/*/; do test -f "$d/SKILL.md" && echo "OK $d" || echo "MISSING $d"; done`
